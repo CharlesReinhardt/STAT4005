@@ -1,0 +1,91 @@
+---
+title: "02-grammar-of-graphics.Rmd"
+author: "Charlie Reinhardt"
+date: "1/19/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## install.packages("palmerpenguins")
+```{r}
+library(palmerpenguins)
+library(tidyverse)
+penguins
+```
+
+### 2.2.3 <STAT>
+```{r}
+ggplot(data = penguins, aes(x = species)) +
+  geom_bar(stat = "count") ## don't need stat = "count" because it's the default.
+
+new_penguins <- penguins %>% group_by(species) %>%
+  summarise(ncount = n())
+
+ggplot(data = new_penguins, aes(x = species, y = ncount)) + 
+  # stat = identity allows us to use y aesthetic instead of a statistical transformation
+  geom_bar(stat = "identity") 
+```
+
+### 2.2.3 <POSITION>
+```{r}
+ggplot(data = penguins, aes(x = species, fill = sex)) +
+  geom_bar(position = "stack") + ## don't need "stacked" because it's default
+  scale_fill_viridis_d()
+```
+
+```{r}
+
+penguins %>% filter(!is.na(sex)) %>%
+  
+ggplot(data = ., aes(x = species, fill = sex)) +
+  geom_bar(position = "dodge") + 
+  scale_fill_viridis_d()
+```
+
+### 2.2.3 <COORDINATE_FUNCTION>
+
+coord_polar() not super common, but might be useful
+```{r}
+ggplot(data = penguins, aes(x = species)) +
+  geom_bar() +
+  coord_polar() # function of note
+```
+
+coord_flip() more common
+```{r}
+ggplot(data = penguins, aes(x = species)) + 
+  geom_bar() +
+  coord_flip() # function of note
+```
+
+penguins example OYO, specifying each grammar thing
+```{r}
+ggplot(data = penguins, mapping = aes(x = bill_length_mm)) + 
+  geom_freqpoly(stat = "bin", position = "identity") +
+  facet_wrap(~island) +
+  coord_cartesian()
+```
+
+code snipped practice jan 24
+```{r}
+library(tidyverse)
+
+category <- rep(c("Group 1", "Group 2", "Group 3", "Group 4", "Group 5"), 7)
+time <- rep(c(2000, 2001, 2002, 2003, 2004, 2005, 2006), each = 5) 
+response <- rpois(length(category), 30)
+df <- tibble(category, time, response)
+
+ggplot(data = df, aes(x = time, y = response)) + 
+  geom_col(aes(fill = category)) + 
+  labs(y = "count") + 
+  scale_fill_viridis_d()
+
+ggplot(data = df, aes(x = time, y = response)) +
+  geom_line(aes(color = category, )) +
+  labs(y = "count") +
+  scale_color_viridis_d()
+```
+

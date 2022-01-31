@@ -1,0 +1,128 @@
+---
+title: "02-exercises: Github and 5.1"
+author: "Charlie Reinhardt"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r libraries}
+library(tidyverse)
+library(rvest)
+library(billboard)
+```
+
+```{r}
+wiki_hot_100s <- wiki_hot_100s
+```
+
+Exercise 4. Change the plot from Exercise 1 to be a Lollipop chart using this website as a reference. Why might the lollipop chart be better than a bar plot?
+```{r}
+wiki_top_15 <- 
+wiki_hot_100s %>% 
+  filter(year <= 2009 & year >= 2000) %>%
+  group_by(artist) %>%
+  summarise(nsongs = n()) %>%
+  arrange(desc(nsongs)) %>%
+  slice(1:15) %>%
+  mutate(artist = fct_reorder(artist, nsongs))
+
+
+ggplot(data=wiki_top_15, aes(x = artist, y = nsongs)) +
+  geom_point() + 
+  geom_segment( aes(x=artist, xend=artist, y=0, yend=nsongs)) +
+  coord_flip()
+```
+
+The lollipop chart arguably has a higher data to ink ratio, which helps the viewer decode the information easier.
+
+
+Exercise 5. Use this website to customize the end points of your lollipop chart. If you have time, you can explore the other customization options. Make it look fancy!
+
+```{r}
+ggplot(data=wiki_top_15, aes(x = artist, y = nsongs)) +
+  geom_segment( aes(x=artist, xend=artist, y=0, yend=nsongs), color="dark gray", lwd = 1) +
+  geom_point(size=6, shape=18, aes(color = artist)) + 
+  scale_color_viridis_d(direction = -1) + 
+  coord_flip() + 
+  theme(legend.position = "none")
+```
+
+**Question for Dr. Higham**, is it misleading to have different colors for each artist, but not tie data to this color? Just to have the color for pretty sake, but also remove the legend?
+
+```{r}
+year <- 2017
+url <- paste0("https://en.wikipedia.org/wiki/Billboard_Year-End_Hot_100_singles_of_", year)
+
+## convert the html code into something R can read
+h <- read_html(url)
+
+## grabs the tables
+tab <- h %>% html_nodes("table")
+df <- tab[[1]] %>% html_table() %>%
+  mutate(year = 2017)
+```
+
+```{r}
+get_wiki_100 <- function(year) {
+  
+  ## same code as before, replacing 2017 with year.
+  url <- paste0("https://en.wikipedia.org/wiki/Billboard_Year-End_Hot_100_singles_of_", year)
+  
+  h <- read_html(url)
+  
+  tab <- h %>% html_nodes("table")
+  df <- tab[[1]] %>% html_table() %>%
+    mutate(year = year)
+  
+  ## tell our function to return the dataframe `df`
+  return(df) 
+}
+```
+
+```{r}
+year_list <- list(2017, 2018, 2019, 2020, 2021)
+df_all <- map(year_list, get_wiki_100)
+```
+
+```{r}
+
+df_2017_present <- bind_rows(df_all) %>%
+  mutate(Title = str_remove_all(Title, pattern = "\"")) %>% ## get rid of \ in title
+  rename(no = No., 
+         title = Title, 
+         artist = `Artist(s)`) ## make column names match with billboard package
+
+wiki_tibble <- as_tibble(wiki_hot_100s) %>% ## convert billboard data to tibble
+  mutate(year = as.numeric(year),
+         no = as.integer(no)) ## change variable types to match with scraped data
+#> Warning in mask$eval_all_mutate(quo): NAs introduced by
+#> coercion
+
+hot100_df <- bind_rows(wiki_tibble, df_2017_present)
+```
+
+Exercise 6. Use the hot100_df to make either a bar plot or a lollipop chart of the most popular artists of the 2010s (2010 through 2019). It may be helpful to make this plot without looking back at the code for the 2000s plot until you get stuck.
+
+```{r}
+hot100_df %>%
+  filter(year >= 2010, year < 2020) %>%
+  mutate(artist = str_remove(artist, " featuring .*")) %>%
+  group_by(artist) %>%
+  summarise(nsongs = n()) %>%
+  arrange(desc(nsongs)) %>%
+  slice(1:15) %>%
+  mutate(artist = fct_reorder(artist, nsongs)) %>%
+  
+  ggplot(., aes(x = artist, y = nsongs)) +
+  geom_point() +
+  geom_segment(aes(x = artist, xend = artist, y = 0, yend = nsongs)) + 
+  coord_flip()
+```
+
+
+Exercise 7. Much of the code to scrape the data, using purrr to iterate over the scrape, and then combining the list of data frames to a single data frame may be new. It is not expected that you are able to write this code on your own, but you should have an overall understanding of what the code is doing. Write 2-3 sentences that summarizes the overall purpose of the rvest and purrr code.
+
+The rvest code allows us to web scrape for information on top songs in years that our dataset does not cover. Purrr then allows us to write effective functions to automate this web scraping, so that we can scrape whichever year we choose at will, and then use tidyr to combine it with our existing data and perform more fun analysis.

@@ -1,0 +1,82 @@
+---
+title: "3 - Introduction to Data Visualization"
+author: "Charlie Reinhardt"
+date: "1/19/2022"
+output: html_document
+---
+
+## 3.1 About You
+
+a. What is your name and what is your class year (first-year, sophomore, junior, senior)?
+- My name is Charlie Reinhardt and I am a Junior
+
+b. What is/are your major(s) and minor(s), either actual or intended?
+- I am majoring in computer science and minoring in statistics
+
+c. Why did you decide to take this course?
+- I am taking this class because I want to play around in R a bit more. I had fun in Intro Data Science, and I want to keep taking SLU's new data science classes.
+
+d. In what semester and year did you take STAT/DATA 234?
+- I took it last fall (Fall 2021, with Dr. Ramler)
+
+e. Have you taken STAT 213? Have you taken CS 140?
+- Yes and yes, I have taken both.
+
+f. Have you used Git before? If so, in what context?
+- I have actually used GitHub quite a bit. I have used it to store class files for CS 220, CS 332, and CS 362. I have also used GitHub for individual side projects and a class group project (but that class group project was a bit of a cluster)
+
+g. Are you currently primarily using R Studio on your desktop or with SLU’s R Studio server?
+- Primarily been using SLU's R Studio Server, in the proecess of downloading R Studio onto my desktop for this class.
+
+h. What is your hometown: city, state, country?
+- Spring Park, Minnesota, United States
+
+i. Do you play a sport on campus? If so, what sport? If not, what is an activity that you do on or off-campus?
+- I am a member of the Varsity Nordic Skiing team here. We have a busy winter full of travel ahead of us!
+
+j. What is your favorite TV show or movie or band/musical artist?
+- TV Show: My roommates have introduced me to New Girl and it is quite enjoyable
+- Movie: Top Gun
+- Artist: Quinn XCII
+
+
+k. Tell me something about yourself.
+- I lived in Prague (Czech Republic) for two years as a kid. I also once accidentally swallowed a clarinet reed in high school. 
+
+l. What are your expectations for this class and/or what do you hope to gain from this class?
+- I am hoping to have some more fun with data science and R. I look forward to hopefully getting more and more comfortable with Git. I can't say I'm specially interested in graphs, but I am looking forward to making some hopefully wicked graphs in this class.
+
+## 3.2 Data Visualizaiton Concepts: Part 1
+
+1. Using either Anscombe’s quartet or the income/voter turnout graph as an example, explain why it’s valuable to look at data graphically instead of examining data only with summary statistics.
+
+With only summary statistics, it is easy to not see the whole picture, and graphics can easily show outliers or funky features of a graph that summary statistics can't display as easily. 
+
+2. Take a look at the bar plot in Figure 1.4. Give a couple of reasons for why the chart has “bad taste.”
+
+Unnecessary 3d features make the data hard to understand, and do not really add anything to the plot. I would also argue that the font and background colors of the graph are a bit off-putting.
+
+
+3. Why might you not always want to maximize the data-to-ink ratio when making charts?
+
+It may lead you to over-minimalism your charts/graphs and make it harder to interpret your graph, even though eliminating superfluous ink tends to be useful.
+
+
+4. What do the authors mean when they say that “relative comparisons need a stable baseline” and how does that affect your ability to interpret the coloured stacked bar plot in Figure 1.11?
+
+It is saying that the brain has a hard time "adjusting" to compare data that doesn't have an immediately obvious "common ground". This makes it hard to interpret the different colors in the stacked bar chart because there is not an easily apparent common ground or baseline to compare most of the sub-categories from.
+
+
+5. What are two key takeaways from Sections 1.1 and 1.2?
+
+a. Displaying data is harder than it looks! It is easy to point out "good" or "bad" data displays when you see them, but breaking them down is more complicated that it seems.
+
+b. The three most common types of problems with graphical displays: 
+- aesthetic (display, design choice) 
+- substantive (data is bad or poorly used)
+- perceptual (how people process general formats of data)
+
+
+6. What is one question that you have about the reading?
+
+Is there actually a time and place for 3d graphics at all? Is it time to remove some portion of them from our data visualization arsenal altogether?

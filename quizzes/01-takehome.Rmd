@@ -1,0 +1,52 @@
+---
+title: "3.3 Data Visualization Concepts: Part 2"
+author: "Charlie Reinhardt"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+1. What is the difference between a colour’s hue and a colour’s intensity?
+
+The hue is what we commonly think of as "color", like whether it is blue or red, etc. Intensity is how strongly that color is represented (light blue, or dark blue?)
+
+
+2. Think of an example where you would want to use a sequential colour scale that’s different from the one given in the text. Then, think of examples where you would use a diverging colour scale and an unordered colour scale.
+
+sequential: a population density map, lighter colors representing less densely populated areas
+
+diverging: showing strength of democrat or republican voting in an area
+
+unordered: a graph of popularity of 10 different singers between the years 2000 to 2009
+
+
+3. Some gestalt inferences take priority over others. Using Figure 1.21, give an example of a gestalt inference that takes priority over another one.
+
+Similarity takes priority over proximity, as in the example in the top right of figure 1.21, the similarly colored circles are more readily perceptually grouped together than the columns of circles located near eachother.
+
+
+4. “Bar charts are better than Pie charts for visualizing a single categorical variable.” Explain how results shown in Figure 1.23 support this claim.
+
+Viewer's perception of pie charts tends to be less accurate (on average) than most varieties of bar chart displays tested in figure 1.23 (the log error for pie charts is larger than those for bar charts)
+
+
+5. Suppose you have a scatterplot of height on the y-axis vs. weight on the x-axis for people born in Canada, Mexico, and the United States. You now want to explore whether the relationship is different for people born in the United States, people born in Canada, and people born in Mexico. Should you use different shapes to distinguish the three countries or should you use different colours? Explain using either Figure 1.24 or 1.25.
+
+To distinguish the countries, you should use color, as color is labeled as more effective in communicating unordered categorical data than shape. We perceive color differences more strongly than shape differences.
+
+
+6. When might you use the left-side of Figure 1.27 to show the law school data? When might you use the right-side of Figure 1.27 to show the law school data?
+
+You might use the left-side of the figure when you want to highlight the trend/sharp decline, whereas the right side is more valuable if you want to show the trend but also keep the bigger picture in mind
+
+7. Summary: What are two takeaways from Sections 1.3-1.7?
+
+how viewers perceive graphs is just as important as the data that you include in your graph. Color, position, or shapes can drastically impact how the viewer decodes and interprets a graph.
+
+generally speaking, when making a graphic or chart to compare two different groups, it is very valuable to give both a common ground starting point, like a similar baseline or scale when selecting types of graph.
+
+8. What is one question that you have about the reading?
+
+How do you know when you're being dishonest with how you present data vs. using tools to highlight certain aspects of the data?

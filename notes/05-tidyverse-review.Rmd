@@ -1,0 +1,187 @@
+---
+title: "05-tidyverse-review"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Aside: Baseline of Zero?
+
+```{r}
+library(palmerpenguins)
+
+ggplot(data = penguins, aes(x = bill_length_mm, y = bill_depth_mm)) + 
+  geom_point() + 
+  xlim(c(0, 60)) + 
+  ylim(c(0, 25))
+
+
+```
+When you're encoding length, baseline of zero is SUPER important. If you're encoding relative position (no length), baseline of zero is usually harmful.
+
+## Section 5.1: Billboard
+```{r}
+library(billboard)
+library(tidyverse)
+head(wiki_hot_100s)
+tail(wiki_hot_100s)
+```
+
+# Section 5.1.1 Exercises
+
+Exercise 1
+```{r}
+wiki_hot_100s <- as_tibble(wiki_hot_100s)
+
+wiki_top_15 <- 
+wiki_hot_100s %>% 
+  filter(year <= 2009 & year >= 2000) %>%
+  group_by(artist) %>%
+  summarise(nsongs = n()) %>%
+  arrange(desc(nsongs)) %>%
+  slice(1:15) %>%
+  mutate(artist = fct_reorder(artist, nsongs))
+  
+
+ggplot(data = wiki_top_15, aes(x = artist, y = nsongs)) +
+  geom_col() + 
+  coord_flip()
+```
+
+Exercise 2. There is a minor flaw in the way that we counted up the number of hits for each artist. Examine the 2nd to last row of the original data set with tail() to look at this potential flaw. What do you find?
+```{r}
+tail(wiki_hot_100s)
+```
+Wiz Khalifa featuring Charlie Puth is identified as it's own artist, not as Wiz Khalifa and/or Charlie Puth
+
+Exercise 3. Challenging. Fix the issue in Exercise 2. May want to skip this question and come back after completing the other exercises.
+```{r}
+wiki_hot_100s %>% 
+  mutate(artist = str_remove(artist, pattern = " featuring .*")) %>% tail()
+```
+
+Exercise 4. Change the plot from Exercise 1 to be a Lollipop chart using this website as a reference. Why might the lollipop chart be better than a bar plot?
+```{r}
+wiki_top_15 %>%
+  ggplot(data = ., mapping = aes(x = artist, y = nsongs)) + 
+  geom_segment( aes(x = artist, xend=artist, y = 0, yend = nsongs)) + 
+  geom_point() + 
+  coord_flip()
+```
+
+To be honest, I don't quite understand. why a lollipop might be better
+- Dr. Higham says higher data to ink ratio is good
+
+Exercise 5. Use this website to customize the end points of your lollipop chart. If you have time, you can explore the other customization options. Make it look fancy!
+```{r}
+wiki_top_15 %>%
+  ggplot(data = ., mapping = aes(x = artist, y = nsongs)) + 
+  geom_segment( aes(x = artist, xend=artist, y = 0, yend = nsongs)) + 
+  geom_point( size = 5, color = "red", shape = 18) + 
+  coord_flip()
+```
+
+# Some webscraping
+```{r}
+library(rvest)
+```
+
+```{r}
+get_wiki_100 <- function(year) {
+  
+  url <- paste0("https://en.wikipedia.org/wiki/Billboard_Year-End_Hot_100_singles_of_", year)
+  
+  h <- read_html(url)
+  
+  tab <- h %>% html_nodes("table")
+  df <- tab[[1]] %>% html_table() %>% 
+    mutate(year = year)
+  
+  return(df)
+}
+```
+
+```{r}
+get_wiki_100(year = 2017)
+```
+
+```{r}
+library(purrr)
+year_list <- list(2017, 2018, 2019, 2020, 2021)
+df_all <- map(year_list, get_wiki_100)
+```
+
+```{r}
+df_2017_present <- bind_rows(df_all)
+```
+
+```{r}
+df_2017_present <- df_2017_present %>%
+  mutate(Title = str_remove_all(Title, pattern = "\"")) %>% ## get rid of \ in title
+  rename(no = No., 
+         title = Title, 
+         artist = `Artist(s)`) ## make column names match with billboard package
+
+wiki_tibble <- as_tibble(wiki_hot_100s) %>% ## convert billboard data to tibble
+  mutate(year = as.numeric(year),
+         no = as.integer(no)) ## change variable types to match with scraped data
+#> Warning in mask$eval_all_mutate(quo): NAs introduced by
+#> coercion
+
+hot100_df <- bind_rows(wiki_tibble, df_2017_present)
+```
+
+Exercise 6. Use the hot100_df to make either a bar plot or a lollipop chart of the most popular artists of the 2010s (2010 through 2019). It may be helpful to make this plot without looking back at the code for the 2000s plot until you get stuck.
+
+```{r}
+hot100_df %>%
+  filter(., year >= 2010, year <= 2019) %>%
+  group_by(artist) %>%
+  summarise(nsongs = n()) %>%
+  arrange(desc(nsongs)) %>%
+  
+  ggplot(data=., aes(x = artist, y = nsongs)) + 
+  geom_segment(x = artist, xend=artist, y=0, yend=nsongs) + 
+  geom_point()
+```
+
+Exercise 7. Much of the code to scrape the data, using purrr to iterate over the scrape, and then combining the list of data frames to a single data frame may be new. It is not expected that you are able to write this code on your own, but you should have an overall understanding of what the code is doing. Write 2-3 sentences that summarizes the overall purpose of the rvest and purrr code.
+
+Exercise 8. If you have time, use purrr and rvest to read different data from Wikipedia into R. For example, you might consider sports championship data, which will typically have a different Wikipedia page for each year or season.
+
+## 5.2 More `tidyverse` Review: Happy Planet Index
+
+```{r}
+hpi_df <- read_csv("data/hpi-tidy.csv")
+```
+
+```{r}
+ggplot(data = hpi_df, aes(x = Footprint, y = Wellbeing)) +
+  geom_point()
+```
+
+```{r}
+hpi_us <- hpi_df %>% filter(Country == "United States of America")
+hpi_interest <- hpi_df %>% filter(Country == "United States of America" | 
+                                    Country == "Sweden" |
+                                    Country == "Russia")
+```
+
+```{r}
+## install.packages("ggrepel")
+library(ggrepel)
+ggplot(data = hpi_df, aes(x = Footprint, y = Wellbeing)) +
+  geom_point() +
+  geom_label_repel(data = hpi_us, aes(label = Country)) +
+  geom_point(data = hpi_us, size = 3, shape = 1) ## create a second point that is an open circle (shape = 1) with a larger size (size = 3) to surround the United States point on the scatterplot
+```
+
+
+# 5.2.2 `plotly` to Label Points Interactively
+```{r}
+## install.packages("plotly")
+
+```
+
