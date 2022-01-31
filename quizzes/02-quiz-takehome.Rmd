@@ -1,0 +1,92 @@
+---
+title: "02-quiz-takehome"
+author: "Charlie Reinahrdt"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+“All work presented is my own, and I have followed all rules for collaboration.”
+
+Charlie Reinhardt
+
+```{r}
+library(tidyverse)
+library(readxl)
+df <- read_excel("data/slu_graduates_17_21.xlsx")
+
+## fixes error in the data
+df <- df %>% mutate(across(everything(),
+                           .fns = ~replace(., . ==  "STATS" , "STAT")))
+```
+
+# Question 1 (7 points).
+
+Make the following chart that shows the “other” majors of each STAT major student in the data set. Hint: You will need `dplyr` and `forcats`: it may be helpful to use some STAT 234 materials linked here to reference the bar plot made for Pokemon Type.
+
+```{r}
+df_majors <-
+df %>%
+  filter(major1 == "STAT" | major2 == "STAT" | major3 == "STAT") %>%
+  pivot_longer(c(3, 4, 5, 6, 7,8), values_to = "discipline", names_to = "type") %>%
+  filter(type == "major1" | type == "major2" | type == "major3") %>%
+  filter(discipline != "STAT" & !is.na(discipline)) %>%
+  group_by(discipline) %>%
+  summarise (nstudent = n()) %>%
+  mutate(discipline = fct_reorder(discipline, nstudent))
+
+ggplot(df_majors, aes(x = discipline, y = nstudent, fill = discipline)) + 
+  geom_col() +
+  coord_flip() + 
+  labs(y = "Number of Students", x = "Major", title = "Secondary Majors of Statistics Majors at St. Lawrence University") + 
+  theme_bw()
+```
+
+### alternate way, keeping for future reference
+```{r}
+df_stat <-
+df %>%
+  pivot_longer(c(3,4,5,6,7,8), values_to = "discipline", names_to = "type") %>%
+  filter(discipline == "STAT")
+  # need more filtering and stuff to address minors
+
+semi_join(df, df_stat, by = "adm_id")
+```
+
+# Question 2 (8 points). 
+
+Make the following lollipop graphic, which investigates the sex disparity of majors at SLU with 50 or more total graduates in the past few years. The y-axis is the major while the x-axis is the proportion of majors who identified as Female. Note that the graph shown below eliminates some of the majors because I want you to discover the final trends on your own! Remember that your graphic should only include all of the majors with 50 or more total graduates.
+
+
+```{r}
+df_female <-
+df %>%
+  pivot_longer(c(3:8), values_to = "discipline", names_to = "type") %>%
+  filter(type %in% c("major1", "major2", "major3") & !is.na(discipline)) %>%
+  group_by(discipline) %>%
+  summarise(n = n(), nfemale = sum(sex == "F"), prop_female = mean(sex == "F")) %>%
+  filter(n >= 50) %>%
+  mutate(discipline = fct_reorder(discipline, prop_female))
+```
+
+overall prop_female
+```{r}
+prop_female <-
+df_female %>%
+  summarise(n = sum(n), nfemale = sum(nfemale)) %>%
+  summarise(overall_prop_female = round(nfemale / n, 2))
+```
+
+```{r}
+ggplot(df_female, aes(x = discipline, y = prop_female)) +
+  geom_segment(aes(x = discipline, xend = discipline, y = 0, yend = prop_female)) +
+  geom_point() + 
+  geom_hline(data = prop_female, aes(yintercept = overall_prop_female, color = "red")) + 
+  scale_y_continuous(breaks = c(0.0, 0.2, 0.4, prop_female$overall_prop_female, 0.6, 0.8)) + 
+  coord_flip() + 
+  labs(x = "Major", y = "Proportion of Female Majors in Past 5 Years", colour = "Proportion Females in \nStudent Body", title = "Proportion of Females in Majors offered at SLU")
+```
+
+
