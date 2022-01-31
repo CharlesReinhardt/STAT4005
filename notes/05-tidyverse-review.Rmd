@@ -136,15 +136,19 @@ hot100_df <- bind_rows(wiki_tibble, df_2017_present)
 Exercise 6. Use the hot100_df to make either a bar plot or a lollipop chart of the most popular artists of the 2010s (2010 through 2019). It may be helpful to make this plot without looking back at the code for the 2000s plot until you get stuck.
 
 ```{r}
+plot6 <-
 hot100_df %>%
   filter(., year >= 2010, year <= 2019) %>%
   group_by(artist) %>%
   summarise(nsongs = n()) %>%
   arrange(desc(nsongs)) %>%
+  mutate(artist = fct_reorder(artist, nsongs)) %>%
+  slice(1:10) %>%
   
   ggplot(data=., aes(x = artist, y = nsongs)) + 
-  geom_segment(x = artist, xend=artist, y=0, yend=nsongs) + 
-  geom_point()
+  geom_segment( aes(x = artist, xend=artist, y=0, yend=nsongs)) + 
+  geom_point() + 
+  coord_flip()
 ```
 
 Exercise 7. Much of the code to scrape the data, using purrr to iterate over the scrape, and then combining the list of data frames to a single data frame may be new. It is not expected that you are able to write this code on your own, but you should have an overall understanding of what the code is doing. Write 2-3 sentences that summarizes the overall purpose of the rvest and purrr code.
@@ -182,6 +186,77 @@ ggplot(data = hpi_df, aes(x = Footprint, y = Wellbeing)) +
 # 5.2.2 `plotly` to Label Points Interactively
 ```{r}
 ## install.packages("plotly")
-
+library(plotly)
 ```
+
+```{r}
+plot1 <- ggplot(data = hpi_df, aes(x = Footprint, y = Wellbeing)) +
+  geom_point()
+
+ggplotly(plot1)
+```
+
+## messing with labels
+```{r}
+plot1 <- ggplot(data = hpi_df, aes(x = Footprint, y = Wellbeing, label = Country)) +
+  geom_point()
+
+ggplotly(plot1, tooltip = "label")
+```
+
+Exercise 2. Use the ggplotly() function on any other plot we’ve made so far.
+```{r}
+ggplotly(plot6)
+```
+
+## Exercise 3. 
+What are some advantages of making a plot more interactive with `plotly`? What are some disadvantages?
+
+Advantages: Interesting, allows user to explore data more
+Disadvantages: Requires computer, adds extra "stuff", bad for making an argument about a graph
+
+# 5.2.3 Themes and Color changes
+
+```{r}
+ggplot(data = hpi_df, aes(x = Footprint, y = Wellbeing)) +
+  geom_point() +
+  geom_label_repel(data = hpi_us, aes(label = Country)) +
+  geom_point(data = hpi_us, size = 3, shape = 1) +
+  labs(title = "Countries with a Higher Ecological Footprint Tend to Have Citizens with Higher Wellbeing", ## add title
+    subtitle = "Wellbeing is on a 1-10 scale", ## add subtitle (smaller text size than the title)
+    caption = "Data Source: http://happyplanetindex.org/countries", ## add caption to the bottom of the figure
+    x = "Ecological Footprint", ## change x axis label
+    y = "Wellbeing") ## change y axis label
+```
+
+# 5.2.4 Changing a color scale
+
+## Exercise 4
+In which of those 3 situation are we in for the World Region graph if we were to color by region?
+
+unordered
+
+## Exercise 5
+```{r}
+ggplot(data = hpi_df, aes(x = Footprint, y = HappyLifeYears, colour = Region)) +
+  geom_point() +
+  scale_colour_brewer(palette = "Set1")
+```
+
+## Exercise 6. 
+Read the examples section of the Help file for ?scale_colour_viridis_d. What’s the difference between scale_colour_viridis_d(), ?scale_colour_viridis_c(), and scale_colour_viridis_b()?
+
+`scale_colour_viridis_x` where `x = d, c, b` are for different types of data to color. Discrete (categorical groups), continuous (like a color gradient), and bins 
+
+`_d` is for discrete values, `_c` is for continuous variables, and `_b` is for binning a continuous variable
+
+# 5.2.5 Faceting
+
+Faceting is more useful if:
+
+* there are "more" categories and
+* if there is a lot of overlap between groups
+
+
+
 
