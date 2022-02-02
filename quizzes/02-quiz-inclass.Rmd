@@ -1,0 +1,74 @@
+---
+title: "02-quiz-inclass"
+author: "Charles Reinhardt"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE)
+```
+
+“All work presented is my own. I have not communicated with or worked with anyone else on this quiz.”
+
+```{r}
+library(tidyverse)
+library(readxl)
+#install.packages("here")
+library(here)
+
+
+df <- read_excel(here("data/slu_graduates_17_21.xlsx"))
+
+## fixes error in the data
+df <- df %>% mutate(across(everything(),
+                           .fns = ~replace(., . ==  "STATS" , "STAT")))
+
+df_long <- df %>% pivot_longer(3:8, names_to = "type", values_to = "discipline")
+
+df_major <- df_long %>% 
+  filter(type == "major1" | type == "major2" | type == "major3")
+
+```
+
+Question 1 (10 points). Make a lollipop chart of the counts of the top 10 most popular majors at SLU in the past five years, ordering the “lollies” from the most popular major to the 10th most popular major.
+
+```{r}
+df_major %>%
+  filter(!is.na(discipline)) %>%
+  group_by(discipline) %>%
+  summarise(n_majors = n()) %>%
+  mutate(discipline = fct_reorder(discipline, n_majors)) %>%
+  slice_max(n_majors, n = 10) %>%
+  
+  ggplot(., aes(x = discipline, y = n_majors)) +
+  geom_segment(aes(xend=discipline, y=0, yend = n_majors)) + 
+  geom_point() +
+  coord_flip() +
+  labs(x = "Major", y = "Number of Students", title = "Most Popular SLU Majors in the Past Five Years") + 
+  theme_bw()
+```
+
+
+Question 2 (10 points). Make the plot from Question 1 of the take-home quiz, but, instead of plotting the other majors of all of the STAT majors in the data set, plot the counts of the minors of all of the STAT majors.
+
+```{r}
+df %>%
+  filter(major1 == "STAT" | major2 == "STAT" | major3 == "STAT") %>%
+  pivot_longer(c(3, 4, 5, 6, 7,8), values_to = "discipline", names_to = "type") %>%
+  filter(type == "minor1" | type == "minor2" | type == "minor3") %>%
+  filter(!is.na(discipline)) %>%
+  group_by(discipline) %>%
+  summarise (nstudent = n()) %>%
+  mutate(discipline = fct_reorder(discipline, nstudent)) %>%
+  
+  ggplot(., aes(x = discipline, y = nstudent, fill = discipline)) + 
+  geom_col() +
+  coord_flip() + 
+  labs(y = "Number of Students", x = "Minor", title = "Minors of Statistics Students at St. Lawrence University") + 
+  theme_bw()
+```
+
+
+Question 3 (5 points). Push your .Rmd and knitted .html file to GitHub, writing a one sentence commit message for your push.
+
+Extra Credit (1 point). For just a single point of extra credit (the purpose of this is mostly to give anyone who finishes the quiz early something to work on), figure out the “average” number of majors SLU students had over the past 5 years. For example, if the data only had three students: two single majors and one double major, the “average” number of majors would be (1 + 1 + 2) / 4 = 1.33 majors.
