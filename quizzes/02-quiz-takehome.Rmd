@@ -90,3 +90,17 @@ ggplot(df_female, aes(x = discipline, y = prop_female)) +
 ```
 
 
+Modifying this second graph of female proportions during class
+```{r}
+df_female %>% mutate(higher = if_else(prop_female > 0.5, true = "Female", false = "Male")) %>%
+
+ggplot(., aes(x = discipline, y = prop_female, color = higher)) +
+  geom_segment(aes(x = discipline, xend = discipline, y = 0.5, yend = prop_female)) +
+  geom_point() + 
+  labs(x = "Major", y = "Proportion of Female Majors in Past 5 Years", title = "Proportion of Females in Majors offered at SLU") + 
+  theme(legend.position = "none") + 
+  coord_flip() + 
+  scale_color_brewer(palette = "Set1")
+  
+```
+
