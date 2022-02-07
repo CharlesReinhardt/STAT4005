@@ -1,5 +1,5 @@
 ---
-title: "03-exercises"
+title: "03-exercises: data vis ethics"
 author: "Charlie Reinhardt"
 output: html_document
 ---
