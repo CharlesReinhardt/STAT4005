@@ -1,0 +1,53 @@
+---
+title: "03-quiz-takehome"
+author: "Charles Reinhardt"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE)
+```
+
+# Quiz 3 Take-Home
+
+Complete this Quiz in a .Rmd file. Submit a .Rmd and a knitted .html file to GitHub by the due date and time.
+
+
+“All work presented is my own, and I have followed all rules for collaboration.”
+
+
+## Question 1 (5 points). 
+
+Consider the Challenger example in our course notes. Clearly, the graphic used to communicate the results is poorly made: it eliminates data points when it really should not. However, the engineers making the graph did not have “malicious intent:” they did not purposefully remove these data points to try to lie: it was a mistake. Is the visualization still unethical? Use principles from the Modern Data Science Readings to explain in a few sentences.
+
+The visualization is still unethical. Two principles of data science ethics are as follows
+
+5. Clearly identify the questions and objectives that drive each project and use to guide both planning and refinement.
+
+8. Present our work in ways that empower others to make better-informed decisions.
+
+In this scenario, the engineers making the graph failed to abide by these two principles. If the engineers had properly identified the objectives of their graphics (to fully understand the safety of the launch), they likely would have included the full data, as the data on no-incident flights are relevant to this objective. Additionally, due to the visualization mistake, the engineers did not empower NASA officials to make better-informed decisions. Including the data (or at least showing the excluded data somehow), would align better with empowering others to make more data-informed decisions.
+
+## Question 2 (4 points). 
+
+Find a graphic online, other than any given in our course readings, that is unethical. Provide a link to your graphic and give a 2-3 sentence description explaining why that graphic is not ethical.
+
+link to graphic: https://www.statisticshowto.com/wp-content/uploads/2014/01/usa-today-2.png
+
+This graphic is unethical because it exaggerates the data. By starting the y axis at 94 million, the graph appears to show that the number of people on welfare is skyrocketing, while if you were to start the baseline at 0 (or even just significantly closer to 0), it would be clear that welfare is not increasing THAT much. It is possible that a different type of visualization would be better than a bar chart as well.
+
+## Question 3 (3 points). 
+
+Explain, in your own words, what each of the following Git terms mean:
+
+**commit**: an update: updating your project/work in meaningful chunks that you will later push
+
+**push**: submitting your updates: placing your work in a spot on GitHub (or other server) where other people can see it
+
+**pull**: downloading other people's updates on your project/work
+
+## Question 4 (3 points). 
+
+These three points are given if you successfully committed with a commit message and pushed your .Rmd and .html files to your GitHub account.
+
+
