@@ -89,6 +89,9 @@ active_long <- active %>% pivot_longer(5:ncol(active), names_to = "date",
 tcases_long <- tcases %>% pivot_longer(5:ncol(tcases), names_to = "date",
                                        values_to = "cases")
 
+```
+
+```{r}
 library(lubridate)
 covid_df <- left_join(tcases_long, active_long,
                       by = c("date", "Order", "NAME")) %>%
@@ -103,22 +106,104 @@ covid_df <- left_join(tcases_long, active_long,
 
 covid_SLC <- covid_df %>% filter(NAME == "St. Lawrence County")
 covid_sub <- covid_df %>% filter(NAME != "St. Lawrence County")
+```
+
+### Exercise 1
+
+Make a line plot that shows the number of active_cases in all of St. Lawrence County over time.
+
+```{r}
+covid_SLC %>% filter(!is.na(Area.y) & !is.na(Population.y)) %>%
+  mutate(month = month(date)) %>%
+  
+  ggplot(., aes(x = date, y = active_cases)) +
+  geom_line()
+```
+
+
+```{r}
 ## install.packages("sf")
 library(sf)
-shp <- read_sf("data/SLC_Civil_Boundaries_SHP/slc.shp") %>%
-  st_transform(st_crs("+proj=longlat"))
+shp <- read_sf("data/SLC_Civil_Boundaries_SHP/slc.shp") %>% # basically read_csv
+  st_transform(st_crs("+proj=longlat")) # specifies longitude and latitude coordinate system
+
 ggplot(data = shp) +
   geom_sf() +
   theme_void()
+```
+
+
+```{r}
 full_df <- left_join(shp, covid_sub, by = "NAME") %>%
   filter(date == max(date)) ## only plot cases on the most recent date
 ggplot(data = full_df) +
   geom_sf(aes(fill = active_cases)) +
   theme_void()
+```
+
+### Exercise 2. 
+
+Change the fill scale of the plot. Should you use an unordered, sequential, or diverging scale?
+
+Sequential, because starts at 0 active cases and goes up from there
+```{r}
+full_df <- left_join(shp, covid_sub, by = "NAME") %>%
+  filter(date == max(date)) ## only plot cases on the most recent date
+ggplot(data = full_df) +
+  geom_sf(aes(fill = active_cases)) +
+  theme_void() + 
+  scale_fill_distiller(type = "seq", palette = 7, direction = 1)
+```
+
+### Exercise 3. 
+
+Change the colour scale so that active_cases are put into different bins with scale_fill_viridis_b(). What are some advantages and disadvantages of this?
+
+```{r}
+full_df <- left_join(shp, covid_sub, by = "NAME") %>%
+  filter(date == max(date)) ## only plot cases on the most recent date
+ggplot(data = full_df) +
+  geom_sf(aes(fill = active_cases)) +
+  theme_void() + 
+scale_fill_viridis_b(n.breaks = 5) # can change number of bins in scale
+```
+
+Advantages: easier to differentiate between different active case numbers between towns, legend is easier on the eyes, simpler
+Disadvantages: less specificity/minute differences
+
+### Exercise 4. 
+
+Explore the ?geom_sf_text() function and add the actual number of cases to the subregions in the plot, as is done on the SLC website.
+
+```{r}
+full_df <- left_join(shp, covid_sub, by = "NAME") %>%
+  filter(date == max(date)) ## only plot cases on the most recent date
+ggplot(data = full_df) +
+  geom_sf(aes(fill = active_cases)) + 
+  geom_sf_text(aes(label = active_cases), color = "blue") + # ugly but demonstrates the code
+  theme_void() + 
+  scale_fill_distiller(type = "seq", palette = 5, direction = 1)
+```
+
+
+## 6.2. Do we need a map?
+
+### Exercise 1. 
+
+Think of a second example where, even though the data is spatial, the best graph to show a particular point would not be a map.
+
+In general, trends through time or relationships between two variables aren't best shown with a map
+
+## 6.4 Leaflet
+
+```{r}
 ## install.packages("devtools")
 library(devtools)
 ## devtools::install_github("li-wen-li/uszipcodes")
 library(uszipcodes)
+```
+
+```{r}
 beers <- read_csv("data/breweries.csv") 
 raw_zip <- uszipcodes::get_zip(beers$address)
 beers$Zip <- as.integer(uszipcodes::clean_zip(raw_zip))
@@ -129,14 +214,35 @@ beer_location <- inner_join(beers, zip_tab)
 content <- beer_location %>%
   mutate(popup = paste0('<a href =', beer_location$website, '>',
                         beer_location$brewery_name, '</a>'))
+
+```
+
+```{r}
 library(leaflet)
 
 beer_map <- leaflet(beer_location) %>%
   setView(lng = -98.583, lat = 39.833, zoom = 4) %>% 
   addTiles() %>% 
-  addProviderTiles(providers$Wikimedia) %>% 
+  addProviderTiles(providers$Stamen.Watercolor) %>% 
   addMarkers(lng = beer_location$Longitude, lat = beer_location$Latitude,
              clusterOptions = markerClusterOptions(),
              popup = content$popup)
 ```
+
+```{r}
+beer_map
+```
+
+### Exercise 1. 
+
+Why is `inner_join()` the most appropriate join function to use here in this example? What observations will an `inner_join()` get rid of from beers? from zip_tab?
+
+`inner_join()` will remove (from beers) breweries without a valid, mappable zip code and will remove (from zip_tab) zipcodes without any breweries
+
+### Exercise 2.
+
+Examine this link (http://leaflet-extras.github.io/leaflet-providers/preview/) to look at various “provider” tiles. Choose one to change from Wikimedia and explain how the resulting map looks different.
+
+It just changes the skin on the map. It can display different information depending on the context in which you want the graphic to be viewed (artistically, streets, geography, etc.)
+
 
