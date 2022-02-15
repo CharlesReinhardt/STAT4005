@@ -1,0 +1,55 @@
+---
+title: "04-quiz-takehome"
+author: "Charles Reinhardt"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+# Quiz 4 Take-Home
+
+Complete this Quiz in a .Rmd file. Submit a .Rmd and a knitted .html file to GitHub by the due date and time.
+
+“All work presented is my own, and I have followed all rules for collaboration.”
+
+Charlie Reinhardt
+
+
+Collaboration Reminder: You may work with other students who are in our class on the take-home quiz, but you must list who you worked with at the top of your quiz. Write the name of any student(s) that you collaborated with in the space below this (ignore this if you did not collaborate with any students).
+
+
+
+## Question 1
+
+Use the leaflet package and the us.cities data set from the maps package to make a Zoom-able map of the 50 U.S. capital cities. When you click on a marker for a capital city, both the city name and state as well as the pop (population) should be displayed.
+
+```{r}
+library(tidyverse)
+library(maps)
+library(leaflet)
+```
+
+```{r}
+us_cities <- us.cities
+us_capitols <- us_cities %>% filter(capital == 2) %>% 
+  mutate(popup = paste0(name, "<br>Population: ",pop))
+
+p1 <- leaflet(us_capitols) %>%
+  setView(lng = -98.583, lat = 39.833, zoom = 4) %>% 
+  addTiles() %>% 
+  addProviderTiles(providers$OpenStreetMap) %>% 
+  addMarkers(lng = us_capitols$long, lat = us_capitols$lat,
+             popup = us_capitols$popup)
+
+```
+
+```{r}
+p1
+```
+
+
+Note that, in the us.cities data set, state capitals are given a value of 2 in the capital variable.
+
+A second note is that if you cannot figure out how to get two “things” (in this case name and population) to display in Leaflet, you would just lose a single point for the quiz (so don’t spend too much time on that part unless you are inclined to do so).
