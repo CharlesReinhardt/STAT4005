@@ -1,0 +1,67 @@
+---
+title: "04-quiz-inclass"
+author: "Charlie Reinhardt"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE)
+```
+
+# Quiz 4 In-Class
+
+Complete this quiz in a .Rmd file. To turn in the quiz, push both a .Rmd file and a knitted .html file to your GitHub site.
+
+“All work presented is my own. I have not communicated with or worked with anyone else on this quiz.”
+
+Charlie Reinhardt
+
+Collaboration Reminder: You may not communicate with or work with anyone else on this quiz, but you may use any of our course materials or materials on the Internet.
+
+
+
+### Question 1 (20 points). 
+
+Examine the alcohol.csv data set that you may have used as an introductory data set in STAT/DATA 234:
+
+```{r}
+library(tidyverse)
+library(here)
+alcohol_df <- read_csv(here("data/alcohol.csv"))
+```
+
+The data set has the following variables on countries throughout the world:
+
+- `country`, the name of the country
+- `beer_servings`, the number of beer servings per person per year
+- `spirit_servings`, the number of spirit servings per person per year
+- `wine_servings`, the number of wine servings per person per year
+- `total_litres_of_pure_alcohol`, the number of litres of pure alcohol consumed per person per year
+
+Construct a map of the beer_servings variable. You should choose an appropriate projection and change the default colour scheme of your map.
+
+```{r}
+library(maps)
+world_map <- ggplot2::map_data("world")
+```
+
+```{r}
+world_df <- left_join(world_map, alcohol_df, by = c("region" = "country"))
+```
+
+```{r}
+ggplot(data = world_df, mapping = aes(x = long, y = lat, group = group)) + 
+  geom_polygon(color = "black", aes(fill = beer_servings)) + 
+  coord_map(projection = "mercator", xlim = c(-180, 180)) + 
+  theme_void() + 
+  scale_fill_fermenter(type = "seq", direction = 1, palette = 7)
+```
+
+
+
+## Question 2 (5 points). 
+
+Give an example of a question of interest about the alcohol data where you would want to construct a visualization other than a map to answer the question. What type of visualization would you construct instead?
+
+Are the 'beer_servings' and 'wine_servings' variables related in each country? Does wine servings increase with beer servings, or does it stay constant, or does it decrease? I would not put this on a map visualization, I would put it on a scatter plot ('beer_servings' on one axis and 'wine_servings' on the other) and potentially facet the plot by area of the world if it proves to be interesting.
+
