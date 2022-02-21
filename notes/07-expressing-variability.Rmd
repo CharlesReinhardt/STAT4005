@@ -1,0 +1,267 @@
+---
+title: "07-Expressing-Variability"
+author: "Charles Reinhardt"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALE)
+```
+
+## 7.1 Are Bar Plots Bad
+```{r}
+library(tidyverse)
+library(here)
+pokemon_df <- read_csv(here("data/pokemon_full.csv"))
+pokemon_height <- pokemon_df %>% 
+  filter(Type %in% c("Bug", "Electric", "Fighting", "Flying",
+                     "Grass", "Steel")) %>%
+  group_by(Type) %>%
+  summarise(avg_height = mean(height)) %>%
+  mutate(Type = fct_reorder(Type, avg_height))
+ggplot(data = pokemon_height, aes(x = Type, y = avg_height)) +
+  geom_col() +
+  coord_flip()
+```
+
+
+#### Exercise 1. 
+
+What can’t we see from this graphic that would be useful?
+
+- The sample size of each type, the possible range/distribution in each group would both be nice to see
+
+#### Exercise 2. 
+
+Make a different plot that shows more relevant features about the underlying data.
+
+```{r}
+pokemon_small <- pokemon_df %>% 
+  filter(Type %in% c("Bug", "Electric", "Fighting", "Flying",
+                     "Grass", "Steel")) %>%
+  group_by(Type) %>% 
+  mutate(avg_height = mean(height, na.rm = TRUE)) %>% 
+  ungroup() %>%
+  mutate(Type = fct_reorder(Type, avg_height)) # or arrange(avg_height) %>% mutate(Type = fct_inorder(Type))
+
+ggplot(data = pokemon_small, aes(x = Type, y = height)) +
+  geom_point(alpha = 0.5) +
+  geom_point(data = pokemon_height, aes(y = avg_height), color = "red", size = 3) + 
+  coord_flip()
+```
+
+
+#### Exercise 3. 
+
+Though we are arguing that bar plots are not generally good to show summaries of continuous data, when might we want to make a bar plot of a summary of continuous data anyway?
+
+- Media has to consider ease of reading (bar charts are easier to read quickly), or we might not even have the underlying data (we only get the mean in the dataset)
+
+
+
+```{r}
+## install.packages("openintro")
+library(openintro)
+data(mlb_players_18)
+mlb_sum <- mlb_players_18 %>% group_by(position) %>%
+  summarise(med_hr = median(HR)) %>%
+  mutate(position = fct_reorder(position, med_hr))
+ggplot(data = mlb_sum, aes(x = position, y = med_hr)) +
+  geom_col() +
+  coord_flip()
+```
+
+#### Exercise 4.
+
+“Fix” the previous plot to show the underlying variability in the number of homeruns for each player position by making a set of boxplots.
+
+```{r}
+p1 <- mlb_players_18 %>%
+  mutate(position = fct_reorder(position, HR, .fun = median)) %>%
+  group_by(position) %>% 
+  mutate(nplayers = n()) %>%
+  
+  ggplot(data = ., aes(x = position, y = HR)) + 
+  geom_boxplot() + 
+  coord_flip()
+p1
+```
+
+#### Exercise 5. 
+
+Use the plotly package to give the sample size for each group when a user hovers over the boxes.
+
+```{r}
+library(plotly)
+
+ggplotly(p1, tooltip = "label") # Higham doesn't know how to do this
+```
+
+Using bar charts to display counts is still useful, but summarizing data and plotting that summary with a bar plot can be misleading
+
+## 7.2 Other Variability Examples
+
+
+```{r}
+nfl_df <- read_csv("data/standings.csv")
+nfl_sum <- nfl_df %>% group_by(team) %>%
+  summarise(nwins = sum(wins),
+            nlosses = sum(loss)) %>%
+  mutate(ngames = nwins + nlosses,
+         win_percentage = 100 * nwins / ngames) %>%
+  mutate(team = fct_reorder(team, win_percentage))
+ggplot(data = nfl_sum, aes(x = team, y = win_percentage)) +
+  geom_point() +
+  geom_segment(aes(x = team, xend = team, y = 0, yend = win_percentage)) +
+  coord_flip() +
+  labs(y = "Win Percentage")
+```
+
+
+```{r}
+# Higham work
+
+nfl_df %>% mutate(win_percent = 100 * wins/ (wins + loss)) %>% 
+  left_join(., nfl_sum) %>%
+  rename(avg_win_pct = win_percentage) %>%
+  mutate(team = fct_reorder(team, avg_win_pct)) %>%
+  
+  ggplot(., aes(x = team, y = win_percent)) + 
+  geom_jitter(width = 0, alpha = 0.2) + # introduce only horizontal jitter
+  geom_point(data = nfl_sum, aes(y = win_percentage, color = "Overall Win Percentage"), size = 2) + 
+  coord_flip() + 
+  scale_color_manual(values = c("Overall Win Percentage" = "red"))
+```
+
+```{r}
+nfl_avg_win <- nfl_sum %>% select(c(team, win_percentage))
+
+nfl_win <- nfl_df %>% group_by(team, year) %>%
+  summarise(nwins = wins, ngames = wins + loss, pct_win = 100 * nwins / ngames) %>%
+  left_join(., nfl_avg_win) %>%
+  mutate(team = fct_reorder(team, win_percentage))
+
+ggplot(data = nfl_win, aes(x = team, y = pct_win)) +
+  geom_point() + 
+  geom_point(data = nfl_sum, aes(x = team, y = win_percentage), color = "red") + 
+  coord_flip()
+```
+
+
+
+### Example we skipped
+
+describing standard error as a large number of simulations instead of as a formula
+
+```{r}
+set.seed(231491)
+n <- 50
+beta0 <- 4
+beta1 <- -2
+x <- 1:n
+epsilon <- rnorm(n, 0, 75)
+y <- beta0 + beta1 * x + epsilon
+df <- tibble(x = x, y = y)
+ggplot(data = df, aes(x = x, y = y)) +
+  geom_point() +
+  geom_smooth(method = "lm")
+sim_reg <- function(n = 50, beta0 = 4, beta1 = -2, s_eps = 75) {
+  x = 1:n
+  epsilon <- rnorm(n, 0, 75)
+
+  y <- beta0 + beta1 * x + epsilon
+  df <- tibble(x = x, y = y)
+  
+  mod <- lm(y ~ x, data = df) 
+  coefs <- mod$coefficients
+  return(coefs)
+}
+sim_reg()
+
+
+output <- purrr::rerun(1000, sim_reg())
+reg_df <- bind_rows(output) %>% rename(intercept = `(Intercept)`, slope = x)
+true_df <- tibble(intercept = 4, slope = -2)
+
+ggplot(data = reg_df) +
+  geom_abline(aes(intercept = intercept, slope = slope), alpha = 0.05) +
+  xlim(c(0, n + 1)) +
+  ylim(c(4 - 2 * 75 - 50, 4 - 2 * 0 + 50)) +
+  geom_abline(data = true_df, aes(intercept = intercept, slope = slope),
+              colour = "red") +
+  labs(x = "x",
+       y = "response")
+```
+
+## 7.3 STAT 113 Survey
+
+```{r}
+statsurvey_df <- read_csv(here("data/stat113_survey.csv"))
+```
+
+Using this data set, we will look at two questions. First, is there evidence from the STAT 113 survey that tattoos have become more or less common (at least among SLU students). Second, is there evidence of grade inflation at SLU? That is, is there evidence that student GPAs have increased over time?
+
+```{r}
+ggplot(data = statsurvey_df, aes(x = time_both, fill = Tattoo)) + 
+  geom_bar()
+  
+
+statsurvey_tattoo <- statsurvey_df %>% 
+  filter(!is.na(Tattoo)) %>% # filter NA
+  group_by(time_both, Tattoo) %>%
+  summarise(ncount)
+  mutate(time_both = fct_inorder(time_both)) %>% # use fct_inorder() to order time_both variable
+  
+  group_by(time_both) %>%
+  summarise(prop_yes = mean(Tattoo == "Yes"), n = n()) #1. compute the proportion and sample size for each year
+
+##
+## 2. compute SE for each year and add it and subtract it from the proportion
+## 3. use a geom to plot the standard errors
+  
+statsurvey_tattoo_higham <- statsurvey_df %>% filter(!is.na(Tattoo)) %>%
+  group_by(time_both, Tattoo) %>%
+  summarise(ncount = n()) %>%
+  ungroup() %>%
+  group_by(time_both) %>%
+  mutate(ntotal = sum(ncount)) %>%
+  ungroup() %>%
+  filter(Tattoo == "Yes") %>%
+  mutate(prop = ncount / ntotal,
+         se = sqrt(prop * (1 - prop) / ntotal),
+         l_se = prop - se,
+         u_se = prop + se) 
+
+statsurvey_tattoo_higham %>% separate(time_both, into = c("semester", "year"), sep = 1) %>%
+  arrange(year, desc(semester)) %>%
+  unite(col = "time_both", c(semester, year)) %>%
+  mutate(time_both = fct_inorder(time_both)) %>%
+
+ggplot(data = ., aes(x = time_both, y = prop)) + 
+  geom_point() + 
+  geom_errorbar(aes(ymin = l_se, ymax = u_se))
+
+statsurvey_tatoo_pivot <- statsurvey_df %>% filter(!is.na(Tattoo)) %>%
+  group_by(time_both, Tattoo) %>%
+  summarise(ncount = n()) %>%
+  ungroup() %>%
+  pivot_wider(., names_from = "Tattoo", values_from = "ncount") # %>% This method of tidying is definitely way better
+  
+```
+
+```{r}
+statsurvey_df %>% filter(!is.na(GPA)) %>%
+  mutate(time_both = fct_inorder(time_both)) %>%
+  group_by(time_both) %>% 
+  summarise(avg_gpa = mean(GPA), sd_gpa = sd(GPA), nstudents = n()) %>%
+  mutate(se = sd_gpa / sqrt(nstudents),
+         l_se = avg_gpa - se,
+         u_se = avg_gpa + se) %>%
+
+
+  
+  ggplot(., aes(x = time_both, y = avg_gpa)) +
+  geom_point() +
+  geom_errorbar(aes(ymin = l_se, ymax = u_se))
+```
+
