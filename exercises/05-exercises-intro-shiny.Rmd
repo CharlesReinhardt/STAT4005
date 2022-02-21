@@ -1,0 +1,30 @@
+---
+title: "05-exercises-intro-to-shiny"
+author: "Charlie Reinhardt"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+
+# 05 Exercises: 9.1 Shiny
+
+### exercise 1
+
+What makes the app given in the first tab interactive? In other words, what is a user allowed to change in the app?
+
+It lets the user generate random data, and then displays a linear regression model based on the data. It allows the user to change parameters for the random data (what regression line it is based on and how much error, sample size). 
+
+### exercise 2
+
+The app outputs graphs and tables. The table mirrors what an R output might look like (description of the linear regression via slope coefficients and intercepts, p-values, etc.), while the graphs draw the line and the random data to help the viewer understand the linear regression.
+
+### exercise 3
+
+app I selected: https://shiny.rstudio.com/gallery/ncaa-swim-team-finder.html
+
+This was a shiny app about NCAA swim programs, and helping athletes both find programs that are right for them, as well as comparing programs against eachother. This was crazy! It lets the user change search criteria for what type of NCAA program they are looking for, and maps schools that match that criteria on a ggplot map (which we know how to do!). It also lets users compare programs between eachother, allowing a user to select schools to compare, and which event to compare, and outputs tables of individual swimmer results and summary boxplots comparing the teams.
+
+One interesting thing: How does it get the data? I know that webscraping for data is not that simple, especially when dealing with sports results statistics likely coming from a variety of sources on the internet. Very impressed
