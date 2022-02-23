@@ -1,0 +1,88 @@
+---
+title: "05-quiz-inclass.Rmd"
+author: "Charlie Reinhardt"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+# Quiz 5 In-Class
+
+Complete this quiz in a .Rmd file. To turn in the quiz, push both a .Rmd file and a knitted .html file to your GitHub site.
+
+
+“All work presented is my own. I have not communicated with or worked with anyone else on this quiz.”
+
+Charlie Reinhardt
+
+Collaboration Reminder: You may not communicate with or work with anyone else on this quiz, but you may use any of our course materials or materials on the Internet.
+
+
+
+### Question 1 (7 points). 
+
+Consider the following two bar plots using the palmerpenguins data set. The first is a plot of the penguin species while the second is a plot of the average bill length for each species.
+
+```{r}
+library(palmerpenguins)
+library(tidyverse)
+ggplot(data = penguins, aes(x = species)) +
+  geom_bar() +
+  labs(y = "Count")
+```
+
+```{r}
+ggplot(data = penguins %>% group_by(species) %>%
+         summarise(avg_length = mean(bill_length_mm, na.rm = TRUE)),
+       aes(x = species, y = avg_length)) +
+  geom_col() +
+  labs(y = "Average Bill Length")
+```
+
+The first is an appropriate graph to construct, as it displays a count of different groups, which is what a bar chart does best. The second is not appropriate because it does not display the uncertainty/variation of the summary statistic in question and can mislead viewers of the graph.
+
+### 
+Question 2 (9 points).
+
+Use the Happy Planet Index data set to construct a graph that does not properly show variability in the underlying data. Recall that some variables in this data set are `LifeExpectancy`, `Wellbeing`, `Footprint`, and `Region` of the world.
+
+```{r}
+library(here)
+hpi_df <- read_csv(here("data/hpi-tidy.csv"))
+```
+
+```{r}
+hpi_df %>% group_by(Region) %>%
+  summarise(avg_life = mean(LifeExpectancy)) %>%
+  mutate(Region = factor(Region)) %>%
+  mutate(Region = fct_reorder(Region, avg_life)) %>%
+  
+  ggplot(., aes(x = Region, y = avg_life)) +
+  geom_point(size = 2) + 
+  geom_segment(aes(x = Region, xend = Region, y = 0, yend = avg_life)) + 
+  coord_flip() + 
+  labs(y = "Average Life Expectancy")
+```
+
+
+### Question 3 (7 points). 
+
+Fix your graph from the previous question so that it does properly show variability in the underlying data.
+
+```{r}
+hpi_df %>% group_by(Region) %>%
+  mutate(avg_life = mean(LifeExpectancy)) %>%
+  ungroup() %>%
+  mutate(Region = factor(Region)) %>%
+  mutate(Region = fct_reorder(Region, avg_life)) %>%
+
+  
+  ggplot(., aes(x = Region, y = LifeExpectancy)) +
+  geom_point(alpha = 0.5) +
+  geom_point(aes(y = avg_life), size = 2, color = "red") +
+  coord_flip()
+  
+```
+
