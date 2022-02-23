@@ -1,0 +1,96 @@
+---
+title: "05-quiz-takehome.Rmd"
+author: "Charlie Reinhardt"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+# Quiz 5 Take-Home
+
+Complete this Quiz in a .Rmd file. Submit a .Rmd and a knitted .html file to GitHub by the due date and time.
+
+“All work presented is my own, and I have followed all rules for collaboration.”
+
+Charlie Reinhardt
+
+
+Collaboration Reminder: You may work with other students who are in our class on the take-home quiz, but you must list who you worked with at the top of your quiz. Write the name of any student(s) that you collaborated with in the space below this (ignore this if you did not collaborate with any students).
+
+The Fishbowl Society^[The Fishbowl Society is an elite and exclusive academic honor society consisting of Edward Towers, Brenden Bready, and myself. The Fishbowl Society has its roots in a study group formed during Fall 2021 for students in Dr. Ramler's STAT-234 Introduction to Data Science Class. This footnote is a long-winded joke. I did not collaborate with anyone on this quiz]
+
+
+Use the STAT 113 survey data set to explore the trend in the popularity of Facebook over time. Do this in 2 ways:
+
+```{r}
+library(tidyverse)
+library(here)
+stat113 <- read_csv(here("data/stat113_survey.csv"))
+```
+
+
+(7 points). Construct a graph that uses the number of Facebook friends each student has.
+
+```{r}
+stat113 %>%
+  select(Facebook, time_year) %>%
+  na.omit() %>%
+  group_by(time_year) %>%
+  summarise(n = n(), avg_friends = mean(Facebook)) %>%
+  mutate(se = sd(avg_friends) / sqrt(n), 
+            l_se = avg_friends - se, u_se = avg_friends + se) %>%
+  
+  
+  
+ ggplot(data = ., mapping = aes(x = time_year, y = avg_friends)) + 
+geom_errorbar(aes(ymin = l_se, ymax = u_se), color = "red", alpha = 0.5) + 
+ geom_point() + 
+  labs(x = "Time", y = "Average Number of Facebook Friends", title = "Student Popularity of Facebook Over Time") + 
+  theme_bw()
+```
+
+```{r}
+year_means <- 
+stat113 %>%
+  select(Facebook, time_year) %>%
+  na.omit() %>%
+  group_by(time_year) %>%
+  summarise(n = n(), avg_friends = mean(Facebook))
+
+stat113 %>%
+  select(Facebook, time_year) %>%
+  na.omit() %>%
+  left_join(., year_means) %>% 
+  mutate(time = fct_rev(time_year)) %>%
+
+  ggplot(., aes(x = time, y = Facebook)) +
+  geom_point(color = "black", alpha = 0.5) + 
+  geom_point(aes(y = avg_friends), color = "red", size = 2) + 
+  coord_flip()
+
+# I would like to set the ylime (Facebook friends limit) to 2500, or somethign that doesn't show our crazy outliers and allows us to better highlight the decreasing avg number of friends
+```
+
+
+(7 points). Construct a graph that uses the proportion of students that have Facebook (assuming that 0 friends means that the student does not have a Facebook account and more than 0 friends means that the student does have a Facebook account).
+
+```{r}
+stat113 %>%
+  select(Facebook, time_year) %>%
+  na.omit() %>%
+  group_by(time_year) %>%
+  summarise(n = n(), prop = mean(Facebook != 0)) %>%
+  mutate(se = sqrt(prop * (1 - prop) / n),
+         l_se = prop - se,
+         u_se = prop + se) %>%
+  
+  ggplot(., aes(x = time_year, y = prop)) +
+  geom_errorbar(aes(ymin = l_se, ymax = u_se), color = "red", alpha= 0.5) +
+  geom_point(size = 2) +
+  labs(x = "Time", y = "Proportion of Students with Facebook", title = "Facebook Popularity Over Time")
+```
+
+
+1 point is provided for committing and pushing to GitHub correctly.
