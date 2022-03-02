@@ -1,0 +1,88 @@
+---
+title: "06-quiz-takehome"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+Quiz 6 Take-Home
+Complete this Quiz in a .Rmd file. Submit a .Rmd and a knitted .html file to GitHub by the due date and time.
+
+“All work presented is my own, and I have followed all rules for collaboration.”
+
+Collaboration Reminder: You may work with other students who are in our class on the take-home quiz, but you must list who you worked with at the top of your quiz. Write the name of any student(s) that you collaborated with in the space below this (ignore this if you did not collaborate with any students).
+
+
+
+Construct a Shiny app for any data set that we have worked with so far (besides SLU Majors and Tennis) or for any data set you used in STAT/DATA 234. Thirteen points will be given for Shiny apps that:
+
+run,
+have at least 2 different inputs,
+have at least 1 plot output that looks presentable (e.g. appropriate labels, colour scale, and makes sense to construct).
+Then, write a 2 sentence description about the purpose of your app (2 points).
+
+Note that the in class version of the quiz will prompt you to use an app that has a sidebarLayout(). You do not need to use this function on the take-home quiz, but it may be helpful to use it for extra practice.
+
+```{r}
+library(tidyverse)
+library(here)
+```
+
+```{r}
+hpi_df <- read_csv(here("data/hpi-tidy.csv"))
+```
+
+```{r}
+hpi_df %>%
+  group_by(Region) %>%
+  filter(Region == "Latin America") %>%
+  mutate(Country = fct_reorder(factor(Country), Footprint)) %>%
+  
+  ggplot(data = ., aes(x = Country, y = Footprint)) + 
+  geom_segment(aes(x = Country, xend = Country, y = 0, yend = Footprint)) + 
+  geom_point(color = "red", size = 2) +
+  coord_flip() +
+  theme_bw()
+```
+
+```{r}
+library(shiny)
+
+ui <- fluidPage(
+  selectInput(inputId = "regionchoice",
+              label = "Choose a region of the world",
+              choices = hpi_df$Region),
+  selectInput(inputId = "varchoice",
+              label = "Choose a statistic",
+              choices = names(hpi_df)[c(-1,-2,-10,-11)]),
+  plotOutput("plot")
+)
+
+server <- function(input, output, session) {
+  
+  new_hpi <- reactive({
+    hpi_df %>%
+      group_by(Region) %>%
+      filter(Region == input$regionchoice) %>%
+      mutate(Country = fct_reorder(factor(Country), .data[[input$varchoice]]))
+    })
+  
+  output$plot <- renderPlot({
+    ggplot(data = new_hpi(), aes(x = Country, xend = Country)) + 
+      geom_segment(aes_string(y = 0, yend = input$varchoice)) + 
+        # having an issue here ^^, but it gets fixed once I select an input
+      geom_point(aes_string(y = input$varchoice), color = "red", size = 2) +
+      labs(y = input$varchoice) + 
+      coord_flip() +
+      theme_bw()
+    })
+  }
+
+shinyApp(ui, server)
+```
+
+This app allows a user to investigate various statistics relating to wellness and environmental impact of different regions of the world. It allows users to pick a statistic and a region
+
+
