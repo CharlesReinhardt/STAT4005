@@ -1,0 +1,318 @@
+---
+title: "10-Reactivity (in shiny)"
+author: "Charlie Reinhardt"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## SLU Majors App
+
+```{r}
+library(tidyverse)
+library(readxl)
+library(here)
+```
+
+```{r}
+df <- read_excel(here("data/slu_graduates_17_21.xlsx"))
+
+## fixes error in the data
+df <- df %>% mutate(across(everything(),
+                           .fns = ~replace(., . ==  "STATS" , "STAT")))
+
+df_long <- df %>% pivot_longer(3:8, names_to = "type", values_to = "discipline")
+df_major <- df_long %>% 
+  filter(type == "major1" | type == "major2" | type == "major3")
+
+df_stat <- df_major %>% filter(discipline == "STAT") 
+df_statfull <- semi_join(df_long, df_stat, by = "adm_id") %>%
+  filter(type == "major1" |
+           type == "major2" | 
+           type == "major3")
+
+df_nostat <- df_statfull %>% filter(discipline != "STAT" &
+                                      !is.na(discipline)) %>%
+  group_by(discipline) %>%
+  summarise(nstudent = n()) %>%
+  mutate(discipline = fct_reorder(discipline, nstudent))
+ggplot(data = df_nostat, aes(x = discipline, y = nstudent)) +
+  geom_col() +
+  coord_flip()
+```
+
+```{r}
+library(shiny)
+
+df$major1
+
+ui <- fluidPage(
+  sidebarLayout(
+    sidebarPanel(
+      selectizeInput(
+        inputId = "majorchoice",  
+        label = "Choose a Major", 
+        choices = df$major1)
+    ),
+    mainPanel(
+      plotOutput(outputId = "majorplot")
+    )
+  )
+)
+
+server <- function(input, output, session) {
+  
+  df_update <- reactive({
+    df_discipline <- 
+      df_major %>% filter(discipline == input$majorchoice) 
+    
+    df_disciplinefull <-
+      semi_join(df_long, df_discipline, by = "adm_id") %>%
+      filter(type == "major1" |
+               type == "major2" | 
+               type == "major3")
+    
+    df_nodiscipline <- 
+      df_disciplinefull %>% filter(discipline != input$majorchoice &
+                                       !is.na(discipline)) %>%
+      group_by(discipline) %>%
+      summarise(nstudent = n()) %>%
+      mutate(discipline = fct_reorder(discipline, nstudent))
+  })
+  
+  
+  output$majorplot <- renderPlot({
+    ggplot(data = df_update(), aes(x = discipline, y = nstudent)) +
+      geom_col() +
+      coord_flip()
+  })  
+}
+```
+
+```{r}
+shinyApp(ui, server)
+```
+
+## Tennis App
+
+```{r}
+library(here)
+library(tidyverse)
+atp_df <- read_csv(here("data/atp_matches_2019.csv"))
+wta_df <- read_csv(here("data/wta_matches_2019.csv"))
+both_df <- bind_rows(atp_df, wta_df)
+```
+
+```{r}
+both_long <- both_df %>% pivot_longer(c(winner_name, loser_name))
+
+## only keep players who have player over 50 matches
+both_n50 <- both_long %>% group_by(value) %>% count() %>%
+  filter(n > 50)
+
+## construct various statistics
+major_tennis <- semi_join(both_long, both_n50, by = c("value"))
+major_tennis <- major_tennis %>% mutate(w_svperc = 100 * w_1stIn / w_svpt,
+                                        l_svperc = 100 * l_1stIn / l_svpt,
+                                        w_firstwon = 100 * w_1stWon / w_1stIn,
+                                        l_firstwon = 100 * l_1stWon / l_1stIn,
+                                        w_secondwon = 100 * w_2ndWon / (w_svpt - w_1stIn),
+                                        l_secondwon = 100 * l_2ndWon / (l_svpt - l_1stIn))
+
+major_tennis_w <- major_tennis %>% filter(name == "winner_name")
+major_tennis_l <- major_tennis %>% filter(name == "loser_name")
+
+w_small <- major_tennis_w %>% select(value, winner_seed, w_ace, w_df, w_svperc,
+                                     w_firstwon, w_secondwon) %>%
+  rename(seed = winner_seed, ace = w_ace, df = w_df, svperc = w_svperc,
+         firstwon = w_firstwon, secondwon = w_secondwon)
+
+l_small <- major_tennis_l %>% select(value, loser_seed, l_ace, l_df, l_svperc, l_firstwon, l_secondwon)  %>%
+  rename(seed = loser_seed, ace = l_ace, df = l_df, svperc = l_svperc,
+         firstwon = l_firstwon, secondwon = l_secondwon)
+
+df <- bind_rows(w_small, l_small) %>%
+  rename(player = "value") 
+
+df %>%
+  filter(player == "Daniil Medvedev") %>%
+  select(player, ace) %>%
+  
+  ggplot(., aes(x = ace)) + 
+  geom_histogram()
+```
+
+```{r}
+library(shiny)
+
+ui <- fluidPage(
+  selectizeInput(inputId = "playerchoice",
+              label = "Choose a player", 
+              choices = df$player),
+  radioButtons(inputId = "varchoice",
+                 label = "Choose a Statistic", 
+                 choices = names(df)[c(3:7)]),
+  plotOutput("hist")
+)
+
+server <- function(input, output, session) {
+  # we need to wrap with reactive({}) if something depends on inputs
+  # if it doesn't depend on input, we should just do it outside shinyapp
+  new_df <- reactive({ 
+    df %>%
+      filter(player == input$playerchoice) %>%
+      select(player, .data[[input$varchoice]])
+  })
+    
+  output$hist <- renderPlot({
+    ggplot(data = new_df(), aes(x = .data[[input$varchoice]])) + 
+    geom_histogram(color = "black", fill = "white")
+  })
+    
+}
+```
+
+```{r}
+shinyApp(ui, server)
+```
+
+## New Tennis App
+```{r}
+library(tidyverse)
+atp_df <- read_csv("data/atp_matches_2019.csv")
+wta_df <- read_csv("data/wta_matches_2019.csv")
+both_df <- bind_rows(atp_df, wta_df)
+
+both_long <- both_df %>% pivot_longer(c(winner_name, loser_name))
+
+## only keep players who have player over 50 matches
+both_n50 <- both_long %>% group_by(value) %>% count() %>%
+  filter(n > 50)
+
+## construct various statistics
+major_tennis <- semi_join(both_long, both_n50, by = c("value"))
+major_tennis <- major_tennis %>% mutate(w_svperc = 100 * w_1stIn / w_svpt,
+                                        l_svperc = 100 * l_1stIn / l_svpt,
+                                        w_firstwon = 100 * w_1stWon / w_1stIn,
+                                        l_firstwon = 100 * l_1stWon / l_1stIn,
+                                        w_secondwon = 100 * w_2ndWon / (w_svpt - w_1stIn),
+                                        l_secondwon = 100 * l_2ndWon / (l_svpt - l_1stIn))
+
+major_tennis_w <- major_tennis %>% filter(name == "winner_name")
+major_tennis_l <- major_tennis %>% filter(name == "loser_name")
+
+w_small <- major_tennis_w %>% select(tourney_name, surface, value, winner_seed, w_ace, w_df, w_svperc,
+                                     w_firstwon, w_secondwon) %>%
+  rename(seed = winner_seed, ace = w_ace, df = w_df, svperc = w_svperc,
+         firstwon = w_firstwon, secondwon = w_secondwon) %>%
+  mutate(result = "win")
+
+l_small <- major_tennis_l %>% select(tourney_name, surface, value, loser_seed, l_ace, l_df, l_svperc, l_firstwon, l_secondwon)  %>%
+  rename(seed = loser_seed, ace = l_ace, df = l_df, svperc = l_svperc,
+         firstwon = l_firstwon, secondwon = l_secondwon) %>%
+  mutate(result = "loss")
+
+df <- bind_rows(w_small, l_small) %>%
+  rename(player = "value")
+df
+
+var_choices <- names(df)[c(1, 2, 4:9)]
+
+library(shiny)
+
+ui <- fluidPage(
+  sidebarLayout(sidebarPanel(
+    selectizeInput("playerchoice",
+                   label = "Choose a Player", choices = levels(factor(df$player)),
+                   selected = "Aryna Sabalenka"),
+    radioButtons("varchoice", label = "Choose a Statistic",
+                 choices = var_choices),
+    sliderInput("binnumber", label = "Choose a Number of Bins", 
+                min = 1, max = 50, value = 15, step = 1)),
+    mainPanel(tableOutput("wintab"), plotOutput("histgraph"))
+  )
+)
+
+server <- function(input, output, session) {
+  
+  df_sub <- reactive({
+    df %>% filter(player == input$playerchoice)
+  })
+  
+  hist_plot <- reactive({
+    # ggplot(df_sub(), aes_string(x = input$varchoice)) +
+    # geom_histogram(colour = "black", fill = "white", bins = 15)
+    base_plot <- ggplot(df_sub(), aes(x = .data[[input$varchoice]]))
+    
+    
+    if (is.numeric(df_sub()[[input$varchoice]]) == TRUE) {
+      
+      base_plot + geom_histogram(colour = "black", fill = "white",
+                     bins = input$binnumber) +
+      theme_minimal(base_size = 22)
+    } else if (is.character(df_sub()[[input$varchoice]])) {
+      base_plot + geom_bar(colour = "black", fill = "white") +
+        theme_minimal(base_size = 22) + # will stop graphs and etc. from being too small in shiny
+        coord_flip()
+    }
+  })
+  
+  
+  output$histgraph <- renderPlot({
+    hist_plot()
+  })
+  
+  output$wintab <- renderTable({
+      table(df_sub()$result)
+  })
+
+}
+
+shinyApp(ui, server)
+```
+
+## Canton, NY Weather Data
+
+```{r}
+library(tidyverse)
+library(lubridate)
+library(here)
+
+weather_df <- read_delim(here("data/canton_ny_weather_data.txt"))
+weather_df
+```
+
+```{r}
+new_weather <- 
+weather_df %>%
+  mutate(month = month(datetime),
+         year = year(datetime),
+         day_of_year = yday(datetime)) %>%
+  select(month, year, day_of_year, tempmin) %>%
+  
+  filter(month %in% c(1, 2)) %>%
+  mutate(year = factor(year))
+```
+
+
+```{r}
+ggplot(data = new_weather, mapping = aes(x = day_of_year, y = tempmin, color = year)) +
+  geom_line()
+
+## how would we wrap in december and january/februrary to be considered a single winter
+```
+
+```{python}
+def test_fun(x, y, z):
+  x2 = x**2
+  y2 = y**2
+  
+  rootz = y ** (0.5)
+  
+  return "x2: " + str(x2) + " y2: " + str(y2) + " rootz: " + str(rootz)
+
+print(test_fun(1, 2, 3))
+```
+

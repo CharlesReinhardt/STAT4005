@@ -121,3 +121,12 @@ shinyApp(ui, server)
 
 ```
 
+## 9.4 Tennis App
+
+
+## pros and cons
+
+Advantages of static graphs:
+- easier to present or send to someone
+- more user friendly (less room for user error, less assumption of computer literacy)
+- better for making a particular point, or to show one particular "thing"
