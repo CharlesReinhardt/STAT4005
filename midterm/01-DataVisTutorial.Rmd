@@ -1,0 +1,185 @@
+---
+title: "Data Visualization Concepts"
+author: "Charles Reinhardt"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE)
+```
+
+
+In this markdown document, we will be introducing you to a few key concepts within Data Visualization. These concepts will form the backbone of the rest of this mini-course and will be fundamental in the rest of your data visualization journey. The first topic we will cover is ggplot's grammar of graphics.
+
+## Topic 1: Grammar of Graphics
+
+In any language, grammar is a defined structure that helps us communicate with others who speak the same language. This is true for data visualization. A grammar of graphics helps us communicate our graphical ideas to others, so that we might be able to talk about creating a graph without referring to "that thing" and "the line on the graph". In essence, a grammar of graphics will help us talk about our graphs with more specificity.
+
+
+In this tutorial, we will be primarily focusing on the `ggplot2` package within the `tidyverse` family. 
+
+```{r}
+#install.packages("tidyverse")
+library(tidyverse)
+```
+
+In `ggplot2`, we have 7 parameters of a grammar of graphics
+
+- `<DATA>`: the data
+- `<MAPPINGS>`: an aesthetic mapping
+- `<GEOM_FUNCTION>`: a geometrical object
+- `<STAT>`: a statistical transformation
+- `<POSITION>`: a position adjustment
+- `<FACET_FUNCTION>`: subplots
+- `<COORDINATE_FUNCTION`>: a coordinate system
+
+Let's focus on those first three by looking at an example using our favorite standard R dataset: iris.
+
+```{r}
+iris <- iris
+head(iris)
+```
+
+```{r}
+ggplot(data = iris, mapping = aes(x = Sepal.Width, y = Sepal.Length)) +
+  geom_point(mapping = aes(color = Species))
+```
+
+In this example (a graph examining the relationship between sepal length and sepal width), we can find our `<DATA>`, `<MAPPINGS>`, and `<GEOM_FUNCTION>` parameters. Our `data = iris` simply defines what dataset (`<DATA>`) we will be using for our visualization. Our `mapping = aes(...)` defines what we want to see in our graphic (our `<MAPPING>`. It defines how aspects of our data get __mapped__ or __translated__ to our graphic. In this case, we want our `Sepal.Width` to get __translated__ to the `x` in our graph, and our `Sepal.Length` to get __translated__ to the `y` in our graph. Finally, we define a `<GEOM_FUNCTION>` with `geom_point(...)`, telling `ggplot` that we want our data displayed with points.
+
+We can also display a boxplot of the data using a different `<GEOM_FUNCTION>`
+
+```{r}
+ggplot(data = iris, mapping = aes(x = Species, y = Sepal.Length)) + 
+  geom_boxplot()
+```
+
+#### `<FACET_FUNCTION>`
+
+A facet function allows us to turn our single graph into multiple subgraphs. A common function to use is `facet_wrap()`
+
+```{r}
+ggplot(data = iris, mapping = aes(x = Sepal.Length, y = Petal.Length)) +
+  geom_point() + 
+  facet_wrap(vars(Species))
+```
+
+There are more complicated facet functions, but `facet_wrap()` is the most common I have used.
+
+#### `<COORDINATE_FUNCTION>`
+
+We can also play with the coordinate system of our graphic. Lets look at the `coord_flip()` function. 
+
+```{r}
+ggplot(data = iris, mapping = aes(x = Species, y = Petal.Length)) + 
+  geom_boxplot() + 
+  coord_flip()
+```
+
+This simply flips the x and y axes of our graph. There are ways to specify a different coordinate system (like `coord_polar()`), but these are far less common than using a simple `coord_flip()` like we did here.
+
+This is barely the surface of a `ggplot2`'s grammar of graphics, and there is much more to be discussed in a more in depth tutorial.
+
+## Topic 2: Colors
+
+One of the greatest strengths of data visualization is giving viewers an easier context to understand data and trends inside of data. One dimension of data visualization is **color**. 
+
+There is much to be discussed on the theory of color and its impacts on data and the brain. Linked [here](https://socviz.co/lookatdata.html) is a great chapter on the topic. This section will focus more on the implementation of different color scales in R.
+
+First, let's create a simple graph to color. 
+```{r}
+ggplot(data = iris, aes(x = Species, y = Petal.Width)) +
+  geom_violin()
+```
+
+To add color, we just add a color parameter in our `aes()` function, either in our `ggplot` or `geom` function. Because we want to mess with color scales, we will put it in our `geom` function.
+
+```{r}
+ggplot(data = iris, aes(x = Species, y = Petal.Width)) +
+  geom_violin(aes(fill = Species))
+```
+
+### Viridis
+
+One popular, color-deficient-friendly color scale is `viridis`, included in base R. By adding a `viridis_scale_fill` function to our ggplot, we can change the colors used to fill in our violin plot.
+
+First, let's create a simple graph to color. 
+```{r}
+ggplot(data = iris, aes(x = Species, y = Petal.Width)) +
+  geom_violin()
+```
+
+To add color, we just add a color parameter in our `aes()` function, either in our `ggplot` or `geom` function. Because we want to mess with color scales, we will put it in our `geom` function.
+
+```{r}
+ggplot(data = iris, aes(x = Species, y = Petal.Width)) +
+  geom_violin(aes(fill = Species)) + 
+  scale_fill_viridis_d()
+```
+
+`?scale_fill_viridis_b` can bring up the help menu for the `viridis` color functions, and shows that there are different versions of `scale_fill_viridis` for discrete, continuous, and binned data. Investigate some of them out on your own!
+
+### Brewer
+
+Another popular color scale is `brewer`. Brewer provides a bit more customization and is my personally preferred color scale.
+
+First, let's create a simple graph to color. 
+```{r}
+ggplot(data = iris, aes(x = Species, y = Petal.Width)) +
+  geom_violin()
+```
+
+To add color, we just add a color parameter in our `aes()` function, either in our `ggplot` or `geom` function. Because we want to mess with color scales, we will put it in our `geom` function.
+
+```{r}
+ggplot(data = iris, aes(x = Species, y = Petal.Width)) +
+  geom_violin(aes(fill = Species)) + 
+  scale_fill_brewer()
+```
+
+The default color palette isn't really doing it for me. Here's why I love brewer. Check out this list of colors linked [here](https://www.datanovia.com/en/wp-content/uploads/dn-tutorials/ggplot2/figures/0101-rcolorbrewer-palette-rcolorbrewer-palettes-1.png).
+
+We customize our `scale_fill_brewer()` by providing a `palette` argument
+```{r}
+ggplot(data = iris, aes(x = Species, y = Petal.Width)) +
+  geom_violin(aes(fill = Species)) + 
+  scale_fill_brewer(palette = "Accent") 
+```
+
+A read of the `?scale_fill_brewer` menu shows you even more customization, like different functions for gradient color scales, automatic binning, and more. The possibilities are endless!
+
+## Topic 3: The `theme()` function
+
+The default graphs in ggplot are actually quite good. For playful data exploration, this should be sufficient. For presenting your data visualizations, you might want some more customization. This is where our `theme()` function comes in.
+
+`ggplot2` has some built in themes to modify the base look of our graph. Let's showcase a few of them. They are as follows
+
+- `theme_gray()` (the default)
+- `theme_bw()`
+- `theme_dark()`
+- `theme_classic()`
+- `theme_light()`
+- `theme_linedraw()`
+- `theme_minimal()`
+- `theme_void()`
+
+```{r}
+ggplot(data = iris, aes(x = Species, y = Petal.Width)) +
+  geom_violin(aes(fill = Species)) + 
+  theme_bw()
+```
+
+```{r}
+ggplot(data = iris, aes(x = Species, y = Petal.Width)) +
+  geom_violin(aes(fill = Species)) + 
+  theme_classic()
+```
+
+```{r}
+ggplot(data = iris, aes(x = Species, y = Petal.Width)) +
+  geom_violin(aes(fill = Species)) + 
+  theme_dark()
+```
+
+They can all serve a different purpose for your data visualization needs. Feel free to try them all out! For more customization like axis ticks, spacing, and more, check out `?theme`. Don't get overwhelmed!
+

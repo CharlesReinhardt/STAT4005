@@ -1,0 +1,72 @@
+---
+title: "Mapping"
+author: "Charlie Reinhardt"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE)
+```
+
+One fantastic tool of data visualization is mapping data. Placing your data on a map can really help viewers understand your data in the context of the physical world. One way to do this is with the `maps` package, which is great for mapping data of common places (US states, world map, etc.).
+
+```{r}
+#install.packages("maps")
+library(maps)
+```
+
+What if we want to map data of less common places like St. Lawrence County? A great way to do this is with something called shapefile objects. There are ways to create shapefiles with GIS software, but let's take a moment to browse [this link](https://www.census.gov/geographies/mapping-files/time-series/geo/carto-boundary-file.html) for some pre-generated shapefiles. I'll grab one that will draw some new england cities and townships. 
+
+Once you find a good one, download the .zip file and move it to the base of your R project. To work with shapefiles, we'll use the `sf` (simple features) library. Let's install and load it now.
+
+```{r}
+# install.packages("sf")
+library(sf)
+library(here)
+
+shp <- read_sf(here("NECTA/cb_2018_us_necta_500k.shp")) %>%
+  st_transform(st_crs("+proj=longlat"))
+```
+
+We use the `st_transform` function to transform our shape file into a more usable format. To be honest, I don't know the inner details of it. 
+
+Now that we have our map data, let's draw the map! We will use the `geom_sf` function to draw our map from a shapefile.
+
+```{r}
+library(tidyverse)
+
+ggplot(data = shp) + 
+  geom_sf() +
+  theme_void()
+```
+
+Now that we've drawn our map, let's put some data on it. Since I don't really want to scrape and wrangle a bunch of data, let's generate some toy data to be associated with these New England cities and townships 
+
+```{r}
+shp_data <- shp %>% mutate(data = str_length(NAME)) 
+
+ggplot(data = shp_data) +
+  geom_sf(aes(fill = data)) +
+  theme_void()
+```
+
+That covers the basics of mapping with shapefiles. All guidelines for clean and ethical data visualizations apply here too, so keep them in mind. 
+
+Naturally though, mapping our data does raise a question: Do we need to map our data?
+
+### Does our data need to be mapped?
+
+Just because your data has geographic information that can be mapped doesn't mean your data is best mapped. Take, for example, the map we just made of New England cities and townships. The data is not necessarily showing any relevant trends geographically, so maybe we should graph it some other way? Let's make a lollipop chart.
+
+```{r}
+shp_data %>% 
+  mutate(NAME = factor(NAME)) %>% 
+  mutate(NAME = fct_reorder(NAME, data)) %>%
+
+ggplot(data = ., aes(x = NAME, y = data)) +
+  geom_segment(aes(xend = NAME, y = 0, yend = data)) + 
+  geom_point() + 
+  coord_flip()
+```
+
+While the data in this example is arbitrarily generated, you can imagine a situation in which this would be a more effective data visualization than a map. Let's say we are interested in collecting employment or public spending information on New England cities and townships. While we could map that data, it is worth asking ourselves: does our data visualization really benefit from a map? If the answer is no, avoid mapping your data. 

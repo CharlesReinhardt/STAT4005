@@ -1,0 +1,84 @@
+---
+title: "Expressing Uncertainty"
+author: "Charlie Reinhardt"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE)
+```
+
+At this point in your data visualization or statistics career, you should be familiar with the idea of uncertainty. After all, most of statistics is about estimating how close you want to get to anything, ever. With this in mind, there should be good ways to express uncertainty in our data. Certainly (pun intended), there are! Let's get into them.
+
+## Why do we need to express uncertainty?
+
+Why do we need to express uncertainty in the first place? Instead of telling you, let me show you by looking at some data from STAT 113 survey responses. Among other variables, `stat113` contains data on student GPAs since 2006. 
+
+```{r}
+library(tidyverse)
+library(here)
+
+stat113 <- read_csv(here("data/stat113_survey.csv"))
+```
+
+Let's say we are interested in investigating if average GPAs are increasing over the last 15 years. Let's put that graph together
+
+```{r}
+stat113 %>% filter(!is.na(GPA))  %>% group_by(time_year) %>% summarise(mean_gpa = mean(GPA)) %>%
+  
+  ggplot(data = ., aes(x = time_year, y = mean_gpa)) + 
+  geom_col()
+```
+
+Keeping in mind that our y scale may skew our conclusions, it does look like there may be a **slight** upward trend in GPAs. 
+
+Compare that graph to the following graph.
+
+```{r}
+stat113 %>% filter(!is.na(GPA)) %>% group_by(time_year) %>% summarise(mean_gpa = mean(GPA))
+  
+  ggplot(data = stat113, aes(x = time_year, y = GPA)) + 
+  geom_violin()
+```
+
+While this graph looks stupid and doesn't actually highlight what I wanted it to (was looking to not copy graphs made in class), it can illustrate an important concept.
+
+Data is not certain! Inherently, there is uncertainty and variability in our data and as data scientists, it is our responsibility to show this as best we can. Here are a few tips and tricks to successfully do that.
+
+### Bar plots obscure uncertainty.
+
+In general, bar plots are best reserved for counting categorical variables. As soon as you begin using bar plots to display summarised data, viewers are unable to see the inherent uncertainty in your data. Consider this alternative to a bar chart (that I quite like)
+
+```{r}
+stat113 %>% filter(!is.na(GPA)) %>% group_by(time_year) %>% mutate(mean_gpa = mean(GPA)) %>% select(time_year, GPA, mean_gpa) %>%
+  
+  ggplot(., aes(x = time_year, y = GPA)) + 
+  geom_point(alpha = 0.5) +
+  geom_point(aes(y = mean_gpa), size = 2, color = "red") + 
+  coord_flip()
+```
+
+While this plot's strengths are not highlighted by this dataset, it does allow the viewer to see inherent uncertainty in the data, while still showing a summarised average to help the viewer find any relevant trends in the data. Yay for graphing uncertainty!
+
+### Error bars
+
+Another great way to express uncertainty while summarising data is to display error bars. Consider graphing heights of students that have taken the stat113 survey. Check this out!
+
+```{r}
+stat113 %>% 
+  filter(!is.na(Hgt)) %>% 
+  group_by(time_year) %>% 
+  mutate(mean_hgt = mean(Hgt), n = n()) %>% 
+  select(time_year, Hgt, mean_hgt, n) %>%
+  mutate(se = sd(Hgt) / sqrt(n), u_se = mean_hgt + se, l_se = mean_hgt - se) %>%
+  
+  ggplot(data = ., aes(x = time_year, y = mean_hgt)) + 
+  geom_point() + 
+  geom_errorbar(aes(ymin = l_se, ymax = u_se))
+```
+
+While this graph could be much prettier, you get my point. The added error bars allow the viewer to see the uncertainty in the graph, while still displaying meaningful trends in our data. 
+
+In general, we should strive to make our as clear and easily interpretable as possible, while still allowing the viewer to make their own conclusions and understand inherent variability in our data. Additional motivation for this can be found on some reading on the [ethics of data visualization](https://highamm.github.io/dataviz_slu/ethics.html). 
+
+# I think this needs more

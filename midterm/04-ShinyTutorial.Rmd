@@ -1,0 +1,203 @@
+---
+title: "04-ShinyTutorial"
+author: "Charlie Reinhardt"
+output: html_document
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE)
+```
+
+So far in these mini-tutorials we have dealt with static data visualizations. These are great for graphics in print or presentations, as they are easy to understand and easy to use to support an argument. However, with the advent of technology like the internet and computers, we have much more power to make interactice data visualizatons.
+
+A powerful and popular tool to build interactive data visualizations with R is the `shiny` package. It requires an intermediate understanding of R and allows statisticians to create some really cool interactive visualizations. Browse [this website](https://shiny.rstudio.com/gallery/) to take a look at some of the possibilities. 
+
+## Building Our App
+
+For our Shiny app, we will use data on Pokemon. Before we make an interactive shiny graph, it is a good practice to make a static version of your graph. Let's do that now.
+
+```{r}
+library(tidyverse)
+library(here)
+
+pokemon <- read_csv(here("data/pokemon_full.csv"))
+```
+
+```{r}
+pokemon_new <- pokemon %>% 
+  group_by(Type) %>%
+  mutate(mean_hp = mean(HP), Type = factor(Type)) %>%
+  ungroup() %>%
+  mutate(type = fct_reorder(Type, mean_hp))
+
+  
+ggplot(data = pokemon_new, aes(x = type, y = HP)) + 
+  geom_point(alpha = 0.5) + 
+  geom_point(aes(y = mean_hp), color = "red", size = 2) + 
+  coord_flip()
+```
+
+Great! Now that we have a static version of our graph, let's get into `shiny`!
+
+```{r}
+#install.packages("shiny")
+library(shiny)
+```
+
+If you begin typing `shinyapp` in a r code chunk, there will be an autocomplete option to give you the basics of a shinyapp. Do that!
+
+```{r, results = 'hide'}
+library(shiny)
+
+ui <- fluidPage(
+  
+)
+
+server <- function(input, output, session) {
+  
+}
+
+shinyApp(ui, server)
+```
+
+This is the framework for an interactive shiny app. We'll get around to making sense of it all, but the basics are in three parts.
+1. `ui` - an object that controls the user interface of your app. This is what the user sees: both for inputting information and for outputting graphs or data.
+2. `server` - a function that controls the backend of the app. This is where any significant data wrangling or plot generation will happen before getting sent to the `ui` object. This function takes input, output, and session info, but shiny handles that so you don't have to worry about it.
+3. `shinyapp` - a function that runs your shiny app, taking your `ui` and `server` and runs your app for a user to enjoy. Yay!
+
+Let's start building our own app piece by piece, first by giving our app some inputs.
+
+```{r}
+library(shiny)
+
+statistics <- pokemon %>% names(.) %>% .[c(4, 5, 6, 7, 8, 9)]
+
+ui <- fluidPage(
+  selectInput("statchoice", label = "Pick a statistic", 
+              choices = statistics)
+)
+
+server <- function(input, output, session) {
+  
+}
+
+shinyApp(ui, server)
+```
+
+Cool! For more varieties of inputs, check out this super useful [shiny cheatsheet](https://shiny.rstudio.com/images/shiny-cheatsheet.pdf). A next good step in building a shiny app is to put our static visualization in our shiny app.
+
+```{r}
+library(shiny)
+
+statistics <- pokemon %>% names(.) %>% .[c(4, 5, 6, 7, 8, 9)]
+
+ui <- fluidPage(
+  selectInput("statchoice", label = "Pick a statistic", 
+              choices = statistics),
+  plotOutput("plot")
+)
+
+server <- function(input, output, session) {
+
+  output$plot <- renderPlot({
+    pokemon %>% 
+    group_by(Type) %>%
+    mutate(mean_hp = mean(HP), Type = factor(Type)) %>%
+    ungroup() %>%
+    mutate(type = fct_reorder(Type, mean_hp)) %>%
+    
+    ggplot(data = ., aes(x = type, y = HP)) + 
+    geom_point(alpha = 0.5) + 
+    geom_point(aes(y = mean_hp), color = "red", size = 2) + 
+    coord_flip()
+  })
+}
+
+shinyApp(ui, server)
+```
+
+Awesome! Glad we are starting to see some progress. The most important thing to take from that change was how we move a plot into the output of our ui. In our `ui` object, we added the `plotOutput("plot")` line. This tells our `ui` to display a plot as output, and tells our `ui` to grab the `"plot"` object from our output object. In our `server` function, we added our data wrangling and `ggplot` in a `renderPlot({ })` function. This is a reactive expression, which we will touch on in a bit. Put simply for now, it will allow us to use our input soon. This `ggplot` object is stored in `output$plot` which subsequently gets graphed in our `ui` object. While changing our input doesn't change our graph yet, we're looking pretty good, right!
+
+Now, let's tie the inputs to our graph, and make our app fully interactive. Take a leap with me here, and I'll explain the code in a moment
+
+```{r}
+library(shiny)
+
+statistics <- pokemon %>% names(.) %>% .[c(4, 5, 6, 7, 8, 9)]
+
+ui <- fluidPage(
+  selectInput("statchoice", label = "Pick a statistic", 
+              choices = statistics),
+  plotOutput("plot")
+)
+
+server <- function(input, output, session) {
+
+  output$plot <- renderPlot({
+    pokemon %>% 
+      group_by(Type) %>%
+      # change 1
+      mutate(mean_stat = mean(.data[[input$statchoice]]), Type = factor(Type)) %>%
+      ungroup() %>%
+      mutate(type = fct_reorder(Type, mean_stat)) %>%
+    
+    
+    ggplot(data = ., aes(x = type)) + 
+    # change 2
+    geom_point(aes_string(y = input$statchoice), alpha = 0.5) + 
+    geom_point(aes(y = mean_stat), color = "red", size = 2) + 
+    coord_flip()
+  })
+}
+
+shinyApp(ui, server)
+```
+
+Look at that! Now we've got a fully reactive app. We made a few changes here: let's look at them.
+1. Instead of computing the mean of `HP`, we compute the average of whatever input the user chose. We pull the choice with `input$statchoice`, getting the choice from our input object. Because our input object stores the input choice as a string, we convert it to a usable data type for R by wrapping it in `.data[[ ]]`. This is one way to deal with the input string format.
+2. We then change our ggplot aesthetic to graph our input choice. Notice the change to `aes_string()`. This is our second way to deal with our input string format: instead of converting from a string to something more usable, we just use a built-in `ggplot` function. While this only works when working within graph aesthetics, it looks a great deal prettier in code. 
+
+## Reactive Expressions
+
+Now, what were those reactive expressions we were talking about earlier? Reactivity is a style of programming that can be a bit mind bending at first. In essence, instead of executing code in order, code is executed as it is needed. Our `renderPlot({})` is a reactive expression, so in our Pokemon app, if we never call for the `output$plot` object, that portion of code would never be run. 
+
+Reactive expressions allow us to tell our app what to do __once we get an input__. It is easy to see why this is instrumental for shiny apps. If the user doesn't provide an input, how will our shiny app know what to display? Let's make one more change to our app to demonstrate some uses of reactivity.
+
+```{r}
+library(shiny)
+
+statistics <- pokemon %>% names(.) %>% .[c(4, 5, 6, 7, 8, 9)]
+
+ui <- fluidPage(
+  selectInput("statchoice", label = "Pick a statistic", 
+              choices = statistics),
+  plotOutput("plot")
+)
+
+server <- function(input, output, session) {
+
+  pokemon_new <- reactive({
+    pokemon %>% 
+      group_by(Type) %>%
+      mutate(mean_stat = mean(.data[[input$statchoice]]), Type = factor(Type)) %>%
+      ungroup() %>%
+      mutate(type = fct_reorder(Type, mean_stat))
+  })
+  
+  output$plot <- renderPlot({
+    ggplot(data = pokemon_new(), aes(x = type)) + 
+    geom_point(aes_string(y = input$statchoice), alpha = 0.5) + 
+    geom_point(aes(y = mean_stat), color = "red", size = 2) + 
+    coord_flip()
+  })
+}
+
+shinyApp(ui, server)
+```
+
+Here, we split up our data wrangling from our ggplot display. Notice that we wrapped our data wrangling in a `reactive({ })` function call. This is the generic version of a reactive expression (compared to `renderPlot()` etc.) that lets us do more general R coding. Then, when we move to our `ggplot`, we pass `pokemon_new()` as our data. We add the parentheses on the end so R knows to treat it more like a function call than static data. 
+
+I would argue that this makes our shiny app code prettier. Apart from looks, more complicated shiny apps with more inputs and outputs may require more reactive expressions to keep organized. 
+
+There is much more to discuss regarding reactive expressions, but what we've shown here is enough to get you started on building your own exciting shiny apps! Happy coding!
