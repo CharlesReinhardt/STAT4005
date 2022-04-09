@@ -1,0 +1,45 @@
+---
+title: "00-testing"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Concept testing. Does a package that lets you tidyverse graph your own regression model matter? Is it already existing in ggplot2?
+
+It totally already exists in ggplot. That is cool though, I'm glad it exists and that I know a bit about how to use it now :)
+
+```{r}
+library(here)
+library(tidyverse)
+
+data <- read_csv(here("data/HomesNNY.csv"))
+data_train <- data[1:10,]
+```
+
+```{r}
+mod <- lm(Price_thousands ~ Size_sqft, data = data)
+summary(mod)
+```
+
+
+```{r}
+library(splines)
+```
+
+```{r}
+ggplot(data = data, aes(x = Size_sqft, y = Price_thousands)) + 
+  geom_point() + 
+  geom_smooth(data = data_train, method = "lm", se = FALSE, formula = y ~ bs(x, 2))
+```
+
+```{r}
+library(glmnet)
+```
+
+```{r}
+mod2 <- glmnet()
+```
+

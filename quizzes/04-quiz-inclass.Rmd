@@ -31,7 +31,7 @@ alcohol_df <- read_csv(here("data/alcohol.csv"))
 ```
 
 The data set has the following variables on countries throughout the world:
-
+t
 - `country`, the name of the country
 - `beer_servings`, the number of beer servings per person per year
 - `spirit_servings`, the number of spirit servings per person per year

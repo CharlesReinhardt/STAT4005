@@ -17,7 +17,7 @@ library(tidyverse)
 library(maps)
 library(here)
 library(knitr)
-hpi_df <- read_csv(here("data/hpi-tidy.csv"))
+thpi_df <- read_csv(here("data/hpi-tidy.csv"))
 world_map <- ggplot2::map_data("world")
 
 df_full <- left_join(world_map, hpi_df, by = c("region" = "Country"))
